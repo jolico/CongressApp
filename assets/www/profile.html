@@ -1,0 +1,243 @@
+ <!DOCTYPE HTML>
+ <HTML>
+	 <head>
+		 <meta charset="UTF-8">
+		 <title>Home</title>
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		 <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+		 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		 <script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+		<script type="text/javascript">
+			var data;
+			var idNum = window.localStorage["idNum"];
+			function parse(json){
+				data = json;	
+			}
+		</script>
+		<script type='text/javascript' 
+		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=parse'></script>
+	 </head> 
+	 <body >
+		<div data-role="page" id="profilePage">
+			<div id="header" data-role="header">
+				<a href="legislators.html" data-icon="arrow-l" rel="external">Back</a>
+				<a href="index.html" data-icon="home">Home</a>
+			</div>
+			<script type="text/javascript">
+				//alert(idNum);
+				$("#header").append("<h4>"+data.feed.entry[idNum].gsx$name.$t+"</h4>");
+			</script>
+			<div data-role="content">
+				<div class="ui-grid-a">
+					<div class="ui-block-a">
+						<div style="width: 100%; height: 100%; text-align:center;">
+							<img id="photo" alt="" src="http://www.ly.gov.tw/upload/01_introduce/0103_leg/LGpicture/80002.jpg" style="height: 300px">
+						</div>
+						<script type="text/javascript">
+							var url = data.feed.entry[idNum].gsx$_d2mkx.$t;
+							var photoUrl="http://www.ly.gov.tw/upload/01_introduce/0103_leg/LGpicture/"+url.slice(71)+url.slice(60,64)+".jpg";
+							$("#photo").attr("src",photoUrl);
+						</script>
+					</div>
+					<div class="ui-block-b">
+						<ul data-role="listview" data-divider-theme="c" data-inset="true">
+							<li id="session" data-role="list-divider">
+								屆數:
+								<h4>第八屆</h4>
+							</li>
+							<li id="party" data-role="list-divider">
+								黨籍:
+							</li>
+							<li id="cir" data-role="list-divider">
+								選區:
+							</li>
+							<li id="comm" data-role="list-divider">
+								委員會: 
+							</li>
+						</ul>
+						<script type="text/javascript">
+							$("#party").append("<h4>"+data.feed.entry[idNum].gsx$party.$t+"</h4>");
+							if(data.feed.entry[idNum].gsx$cir.$t==data.feed.entry[idNum].gsx$cirsub.$t){
+								$("#cir").append("<h4>"+data.feed.entry[idNum].gsx$cir.$t+"</h4>");
+							}else{
+								$("#cir").append("<h4>"+data.feed.entry[idNum].gsx$cir.$t+", "+data.feed.entry[idNum].gsx$cirsub.$t+"</h4>");
+							}
+							$("#comm").append("<h4>"+data.feed.entry[idNum].gsx$comm.$t+"</h4>");
+						</script>
+					</div>
+				</div>
+				<div data-role="navbar" data-iconpos="top">
+					<ul>
+						<li>
+							<a href="#email" data-rel="popup" data-transition="slidedown">
+								電子郵件
+							</a>
+							<div id="email" data-role="popup" data-position-to="window" style="width:100%;height:100%;">
+								<ul id="emailList" data-role="listview" style="width:500px;" data-inset="true">
+									<li data-role="list-divider" style="width:100%;">點擊傳送電子郵件</li>
+								</ul>
+								<script type="text/javascript">
+									if(data.feed.entry[idNum].gsx$offemail1.$t){
+										$("#emailList").append("<li style=\"width:100%;\"><a href=\"mailto:"+data.feed.entry[idNum].gsx$offemail1.$t+"\">"+data.feed.entry[idNum].gsx$offemail1.$t+"</a></li>");
+										if(data.feed.entry[idNum].gsx$offemail2.$t){
+											$("#emailList").append("<li style=\"width:100%;\"><a href=\"mailto:"+data.feed.entry[idNum].gsx$offemail2.$t+"\">"+data.feed.entry[idNum].gsx$offemail2.$t+"</a></li>");
+										}
+									}else{
+										$("#emailList").append("<h6>目前沒有電子郵件資料!</h6>");
+									}
+								</script>
+							</div>
+						</li>
+						<li>
+							<a href="#address" data-rel="popup" data-transition="slidedown">
+								辦公室
+							</a>
+							<div id="address" data-role="popup" data-position-to="window" style="width:100%;height:100%;">
+								<ul id="addrList" data-role="listview" style="width:500px;" data-inset="true">
+									<li data-role="list-divider" style="width:100%;">服務處地址</li>
+								</ul>
+								<script type="text/javascript">
+									var addrFlag = false;
+									var addr = new Array();
+									var addrName = new Array();
+									var i = 0;
+									if(data.feed.entry[idNum].gsx$offadd){
+										$("#addrList").append("<li style=\"width:100%;\"><a href='map.html' rel='external' onclick=\"setAddr(data.feed.entry[idNum].gsx$offadd.$t);\">"+data.feed.entry[idNum].gsx$offadd.$t+"</a></li>");
+										addr[i] = data.feed.entry[idNum].gsx$offadd.$t;
+										addrName[i++] = "國會辦公室";
+										addrFlag = true;
+									}
+									if(data.feed.entry[idNum].gsx$_dnp34){
+										$("#addrList").append("<li style=\"width:100%;\">"+data.feed.entry[idNum].gsx$_dnp34.$t+data.feed.entry[idNum].gsx$_dp3nl.$t+data.feed.entry[idNum].gsx$_df9om.$t+"</li>");
+										addr[i] = data.feed.entry[idNum].gsx$_dnp34.$t+data.feed.entry[idNum].gsx$_dp3nl.$t+data.feed.entry[idNum].gsx$_df9om.$t;
+										addrName[i++] = data.feed.entry[idNum].gsx$_dnp34.$t+data.feed.entry[idNum].gsx$_dp3nl.$t+"服務處";
+										if(data.feed.entry[idNum].gsx$_dxj3v){
+											$("#addrList").append("<li style=\"width:100%;\">"+data.feed.entry[idNum].gsx$_dxj3v.$t+data.feed.entry[idNum].gsx$_dyxo8.$t+data.feed.entry[idNum].gsx$_e0c8p.$t+"</li>");
+											addr[i] = data.feed.entry[idNum].gsx$_dxj3v.$t+data.feed.entry[idNum].gsx$_dyxo8.$t+data.feed.entry[idNum].gsx$_e0c8p.$t;
+											addrName[i++] = data.feed.entry[idNum].gsx$_dxj3v.$t+data.feed.entry[idNum].gsx$_dyxo8.$t+"服務處";
+											if(data.feed.entry[idNum].gsx$_e7d2q){
+												$("#addrList").append("<li style=\"width:100%;\">"+data.feed.entry[idNum].gsx$_e7d2q.$t+data.feed.entry[idNum].gsx$_e8rn7.$t+data.feed.entry[idNum].gsx$_ea67k.$t+"服務處</a></li>");
+												addr[i] = data.feed.entry[idNum].gsx$_e7d2q.$t+data.feed.entry[idNum].gsx$_e8rn7.$t+data.feed.entry[idNum].gsx$_ea67k.$t;
+												addrName[i++] = data.feed.entry[idNum].gsx$_e7d2q.$t+data.feed.entry[idNum].gsx$_e8rn7.$t+"服務處";
+												if(data.feed.entry[idNum].gsx$_eleqw){
+													$("#addrList").append("<li style=\"width:100%;\">"+data.feed.entry[idNum].gsx$_e5yid.$t+data.feed.entry[idNum].gsx$_eilm2.$t+data.feed.entry[idNum].gsx$_ek06j.$t+"</li>");
+													addr[i] = data.feed.entry[idNum].gsx$_e5yid.$t+data.feed.entry[idNum].gsx$_eilm2.$t+data.feed.entry[idNum].gsx$_ek06j.$t;
+													addrName[i++] = data.feed.entry[idNum].gsx$_e5yid.$t+data.feed.entry[idNum].gsx$_eilm2.$t+"服務處";
+												}
+											}
+										}
+										addrFlag = true;
+									}
+									if(!addrFlag){
+										$("#addrList").append("<h6>目前沒有地址資料!</h6>");
+									}
+									function setAddr(address){
+										window.localStorage["address"] = address;
+										window.localStorage["addr"] = JSON.stringify(addr);
+										window.localStorage["addrName"] = JSON.stringify(addrName);
+									}
+								</script>
+							</div>
+						</li>
+						<li>
+							<a href="#socialWeb" data-rel="popup" data-transition="slidedown">
+								個人網站
+							</a>
+							<div id="socialWeb" data-role="popup" data-position-to="window" style="width:100%;height:100%;">
+								<script type="text/javascript">
+									function load(url){
+									    navigator.app.loadUrl(url, { openExternal:true });
+									    return false;
+									} 
+								</script>
+								<ul id="websiteList" data-role="listview" style="width:500px;" data-inset="true">
+									<li data-role="list-divider" style="width:100%;">個人網站</li>
+								</ul>
+								<script type="text/javascript">
+									var websiteFlag = false;
+									//Facebook
+									if(data.feed.entry[idNum].gsx$socialfb.$t){
+										$("#websiteList").append("<li style=\"width:100%;\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$socialfb.$t+"\')\">"+data.feed.entry[idNum].gsx$socialfb.$t+"</a></li>");
+										if(data.feed.entry[idNum].gsx$_d9ney){
+											$("#websiteList").append("<li style=\"width:100%;\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$_d9ney.$t+"\')\">"+data.feed.entry[idNum].gsx$_d9ney.$t+"</a></li>");
+											if(data.feed.entry[idNum].gsx$_db1zf){
+												$("#websiteList").append("<li style=\"width:100%;\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$_db1zf.$t+"\')\">"+data.feed.entry[idNum].gsx$_db1zf.$t+"</a></li>");
+											}
+										}
+										websiteFlag = true;
+									}
+									//部落格
+									if(data.feed.entry[idNum].gsx$offblog.$t){
+										$("#websiteList").append("<li style=\"width:100%;\"><a href=\""+data.feed.entry[idNum].gsx$offblog.$t+"\" rel=\"external\" target=\"_system\">"+data.feed.entry[idNum].gsx$offblog.$t+"</a></li>");
+										if(data.feed.entry[idNum].gsx$_cu76f){
+											$("#websiteList").append("<li style=\"width:100%;\"><a href=\""+data.feed.entry[idNum].gsx$_cu76f.$t+"\" rel=\"external\" target=\"_system\">"+data.feed.entry[idNum].gsx$_cu76f.$t+"</a></li>");
+											if(data.feed.entry[idNum].gsx$_cvlqs){
+												$("#websiteList").append("<li style=\"width:100%;\"><a href=\""+data.feed.entry[idNum].gsx$_cvlqs.$t+"\" rel=\"external\" target=\"_system\">"+data.feed.entry[idNum].gsx$_cvlqs.$t+"</a></li>");
+											}
+										}
+										websiteFlag = true;
+									}
+									if(!websiteFlag){
+										$("#websiteList").append("<h6>目前沒有個人網站資料!</h6>");
+									}
+								</script>
+							</div>
+						</li>
+						<li>
+							<a href="#phone" data-rel="popup" data-transition="slidedown">
+								打電話
+							</a>
+							<div id="phone" data-role="popup" data-position-to="window" style="width:100%;height:100%;">
+								<ul id="phoneNumList" data-role="listview" style="width:500px;" data-inset="true">
+									<li data-role="list-divider" style="width:100%;">打電話</li>
+								</ul>
+								<script type="text/javascript">
+							VARneFlag = false;
+									if(data.feed.entry[idNum].gsx$offtel){
+										$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$offtel.$t+"\">國會研究室</a></li>");
+										if(data.feed.entry[idNum].gsx$_d6ua4){
+											$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_d6ua4.$t+"\">國會研究室二</a></li>");
+										}
+										phoneFlag = true;
+									}
+									if(data.feed.entry[idNum].gsx$_dgo93){
+										$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_dgo93.$t+"\">"+data.feed.entry[idNum].gsx$_dnp34.$t+data.feed.entry[idNum].gsx$_dp3nl.$t+"服務處</a></li>");
+										if(data.feed.entry[idNum].gsx$_di2tg){
+											$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_di2tg.$t+"\">"+data.feed.entry[idNum].gsx$_dnp34.$t+data.feed.entry[idNum].gsx$_dp3nl.$t+"服務處二</a></li>");
+										}
+										phoneFlag = true;
+									}
+									if(data.feed.entry[idNum].gsx$_dqi9q){
+										$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_dqi9q.$t+"\">"+data.feed.entry[idNum].gsx$_dxj3v.$t+data.feed.entry[idNum].gsx$_dyxo8.$t+"服務處</a></li>");
+										if(data.feed.entry[idNum].gsx$_drwu7){
+											$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_drwu7.$t+"\">"+data.feed.entry[idNum].gsx$_dxj3v.$t+data.feed.entry[idNum].gsx$_dyxo8.$t+"服務處二</a></li>");
+										}
+										phoneFlag = true;
+									}
+									if(data.feed.entry[idNum].gsx$_ebks1){
+										$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_ebks1.$t+"\">"+data.feed.entry[idNum].gsx$_e7d2q.$t+data.feed.entry[idNum].gsx$_e8rn7.$t+"服務處</a></li>");
+										if(data.feed.entry[idNum].gsx$_e1qt2){
+											$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_e1qt2.$t+"\">"+data.feed.entry[idNum].gsx$_e7d2q.$t+data.feed.entry[idNum].gsx$_e8rn7.$t+"服務處二</a></li>");
+										}
+										phoneFlag = true;
+									}
+									if(data.feed.entry[idNum].gsx$_eleqw){
+										$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_eleqw.$t+"\">"+data.feed.entry[idNum].gsx$_e5yid.$t+data.feed.entry[idNum].gsx$_eilm2.$t+"服務處</a></li>");
+										if(data.feed.entry[idNum].gsx$_emtbd){
+											$("#phoneNumList").append("<li style=\"width:100%;\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_emtbd.$t+"\">"+data.feed.entry[idNum].gsx$_e5yid.$t+data.feed.entry[idNum].gsx$_eilm2.$t+"服務處二</a></li>");
+										}
+										phoneFlag = true;
+									}
+									if(!phoneFlag){
+										$("#phoneNumList").append("<h6>目前沒有電話資料!</h6>");
+									}
+								</script>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</body>
+</HTML> 
+		 

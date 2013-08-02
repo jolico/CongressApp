@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<HTML>
+	<head>
+		<meta charset="UTF-8">
+		<title>LegislatorsList</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+		<script src="cordova.js"></script>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+		<script type="text/javascript">
+			var data;
+			var idNum;
+			function parse(json){
+				data = json;	
+			}
+		</script>
+		<script type='text/javascript' 
+		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=parse'></script>
+	 </head> 
+	 <body>
+		<!-- Home -->
+		<div data-role="page" id="legislatorPage">
+			<div data-role="header">
+				<a href="index.html" data-icon="arrow-l" rel="external">Back</a>
+				<h4>立法委員名單</h4>
+				<a href="index.html" data-icon="home">Home</a>
+			</div>
+			<div data-role="content">
+				<ul id="nameList" data-role="listview" data-filter="true">
+				</ul>
+
+			</div>
+		</div>
+				<script type="text/javascript">
+					var a = data.feed.entry.length;
+					//alert(a);
+					for(var i=3; i<a; i=i+1){
+						$("#nameList").append("<li><a href=\"profile.html\" id=\"id"+i+"\">"+data.feed.entry[i].gsx$name.$t+"</a></li>");
+						$("#id"+i).click(function(){
+							idNum = parseInt($(this).attr("id").slice(2));
+							window.localStorage["idNum"]=idNum;
+							//alert(idNum);
+						});
+					}
+				</script>
+	</body>
+</HTML> 
+		 
