@@ -8,6 +8,7 @@
 		 <script src="cordova.js"></script>
 		 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 		 <script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+		 <script src="jquery.nicescroll.js"></script>
 	 </head>
 	 <script type="text/javascript"
       		 src="http://maps.googleapis.com/maps/api/js?&sensor=true">
@@ -186,8 +187,10 @@
 			<div class="ui-gird-a">
 				<div class="ui-block-a" id="vertical">
 					<div id="map_canvas" style="width: 360px; height: 480px;"></div>
-					<ul data-role="listview" data-split-icon="delete" id="map_list" style="margin:0;">
-    				</ul>
+					<div id="map_list_div">
+						<ul data-role="listview" data-split-icon="delete" id="map_list" style="margin:0;">
+    					</ul>
+    				</div>
 				</div>
 				<div class="ui-block-b" id ="horizontal"></div>
 			</div>
@@ -213,7 +216,7 @@
 					if($(window).width()>$(window).height()){//水平
   	  					document.getElementById("map_canvas").style.width =  $(window).width()/2+"px";
 						document.getElementById("map_canvas").style.height = $(window).height()-$("#header").outerHeight(true)+"px";
-						document.getElementById('horizontal').appendChild(document.getElementById('map_list'));
+						document.getElementById('horizontal').appendChild(document.getElementById('map_list_div'));
 						document.getElementById('horizontal').style.width = "50%";
 					} else {
 						document.getElementById("map_canvas").style.width =  $(window).width()+"px";
@@ -227,17 +230,27 @@
   	  					if(window.orientation == 0 || window.orientation == 180){
 	  	  					document.getElementById("map_canvas").style.height = ($(window).height()-$("#header").outerHeight(true))/2+"px";
   							document.getElementById("map_canvas").style.width = $(window).width()+"px";
-  							document.getElementById('vertical').appendChild(document.getElementById('map_list'));
+  							document.getElementById('vertical').appendChild(document.getElementById('map_list_div'));
   						} else {
   							document.getElementById("map_canvas").style.width = $(window).width()/2+"px";
   							document.getElementById("map_canvas").style.height = $(window).height()-$("#header").outerHeight(true)+"px";
-  							document.getElementById('horizontal').appendChild(document.getElementById('map_list'));
+  							document.getElementById('horizontal').appendChild(document.getElementById('map_list_div'));
   							document.getElementById('horizontal').style.width = "50%";
   						}
   	  					google.maps.event.trigger(map, "resize");
   	  					map.setCenter(center);
-  					},200);//Android系統詭異的需要delay才能更新成正確的長寬
+  					},250);//Android系統詭異的需要delay才能更新成正確的長寬
   				});
+  				//set scroll view
+				$(document).ready(
+						function() { 
+							if($(window).width()>$(window).height()){
+								$("#map_list_div").height($(window).height()-$("#header").outerHeight(true));
+							} else {
+								$("#map_list_div").height(($(window).height()-$("#header").outerHeight(true))/2);
+							}
+							$("#map_list_div").niceScroll();
+						});
   				for(var i=0; i<addr.length; i++){
   					var htmlcode = "<li style='height:60px'>"+
 									"<div class=ui-block-a style='word-break:break-all;'>"+

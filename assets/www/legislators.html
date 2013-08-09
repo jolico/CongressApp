@@ -17,6 +17,7 @@
 		</script>
 		<script type='text/javascript' 
 		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=parse'></script>
+	 <script src="jquery.nicescroll.js"></script>
 	 </head> 
 	 <body>
 		<!-- Home -->
@@ -36,7 +37,7 @@
 					var a = data.feed.entry.length;
 					//alert(a);
 					for(var i=3; i<a; i=i+1){
-						$("#nameList").append("<li><a href=\"profile.html\" id=\"id"+i+"\">"+data.feed.entry[i].gsx$name.$t+"</a></li>");
+						$("#nameList").append("<li><a href='profile.html' id='id"+i+"' rel='external'>"+data.feed.entry[i].gsx$name.$t+"</a></li>");
 						$("#id"+i).click(function(){
 							idNum = parseInt($(this).attr("id").slice(2));
 							window.localStorage["idNum"]=idNum;
