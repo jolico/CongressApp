@@ -1,18 +1,36 @@
-
 <!DOCTYPE HTML>
 <HTML>
 <head>
 <meta charset="UTF-8">
-<title>Home</title>
+<title>LegislatorsProfile</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet"
-	href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script
-	src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+<script src="cordova.js"></script>
 <script type="text/javascript">
 	var data;
-	var idNum = window.localStorage["idNum"];
+	var name = window.localStorage["name"];
+	var idNum;// = window.localStorage["idNum"];
+	//將與委員有關的資料列表
+	function refreshInfoList(){
+		//提案
+		//立法院網站:http://www.ly.gov.tw/innerIndex.action
+			//會議出席
+			//投票
+			//發言
+	}
+	//統計該委員的提案數(存入資料庫?)
+	//以委員姓名尋找,回傳id
+	function findLegislator(name){
+		for(var i=0; i<data.feed.entry.length;i++){
+			if(data.feed.entry[i].gsx$name.$t == name){
+				return i;
+			}
+		}
+		alert("Error: 無法找到此位委員!");
+		return 2;
+	}
 	function parse(json) {
 		data = json;
 	}
@@ -21,46 +39,33 @@
 	src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=parse'></script>
 <script src="jquery.nicescroll.js"></script>
 </head>
-<body>
+<body  onload="initLayout();">
 	<div data-role="page" id="profilePage">
 		<div id="header" data-role="header">
 			<a href="legislators.html" data-icon="arrow-l" rel="external">Back</a>
 			<a href="index.html" data-icon="home">Home</a>
 		</div>
 		<script type="text/javascript">
-			//alert(idNum);
-			$("#header").append(
-					"<h4>" + data.feed.entry[idNum].gsx$name.$t + "</h4>");
+			idNum = findLegislator(name);
+			$("#header").append("<h4>" + data.feed.entry[idNum].gsx$name.$t + "</h4>");
 		</script>
 		<div data-role="content">
 			<div class="ui-gird-a" style="height: 100%; width: 100%;">
-				<div class="ui-block-a" id="vertical"
-					style="height: 100%; width: 100%;">
-					<div class="ui-grid-a" style="height: 33%; width: 100%;">
-						<div class="ui-block-a" style="height: 100%; width: 50%;">
-							<div style="width: 100%; height: 100%; text-align: center;">
-								<img id="photo" alt="" src="" style="height: 100%;">
-							</div>
+				<div class="ui-block-a" id="vertical" style="height: 100%; width: 100%;">
+					<div class="ui-grid-a" id="profile" style="width: 100%;">
+						<div class="ui-block-a" style="height: 100%; width: 50%; text-align: center;">
+							<img id="photo" alt="" src="" style="height: 100%;">
 							<script type="text/javascript">
 								var url = data.feed.entry[idNum].gsx$_d2mkx.$t;
 								var photoUrl = "http://www.ly.gov.tw/upload/01_introduce/0103_leg/LGpicture/"
 										+ url.slice(71)
 										+ url.slice(60, 64)
 										+ ".jpg";
-								var height, width;
-								if ($(window).height() > $(window).width()) {
-									height = $(window).height();
-									width = $(window).width();
-								} else {
-									height = $(window).width();
-									width = $(window).height();
-								}
 								$("#photo").attr("src", photoUrl);
 							</script>
 						</div>
 						<div class="ui-block-b" style="height: 100%; width: 50%;">
-							<ul data-role="listview" data-divider-theme="c" data-inset="true"
-								style="height: 100%; width: 100%; margin: 0;">
+							<ul data-role="listview" data-divider-theme="c" data-inset="true" style="height: 100%; width: 100%; margin: 0;">
 								<li class="list" id="session" data-role="list-divider">
 									<p class="myfont">屆數:</p>
 									<h4 class='myfont'>第八屆</h4>
@@ -104,20 +109,20 @@
 							</script>
 						</div>
 					</div>
-					<div id="navbar" data-role="navbar" style="width: 100%;">
+					<div id="navbar" data-role="navbar" style="width: 100%; padding: 5px 0px 5px 0px;">
 						<ul>
-							<li><a href="#email" data-rel="popup"
+							<li><a href="#email" data-rel="popup" data-icon="info" data-iconpos="top"
 								data-transition="slidedown" data-position-to="window" class="navtext">電子郵件</a></li>
-							<li><a href="map.html" rel='external' onclick="setAddr();" class="navtext">辦公室
+							<li><a href="map.html" data-icon="home" data-iconpos="top" rel='external' onclick="setAddr();" class="navtext">辦公室
 							</a></li>
-							<li><a href="#socialWeb" data-rel="popup"
+							<li><a href="#socialWeb" data-rel="popup" data-icon="star" data-iconpos="top"
 								data-transition="slidedown" data-position-to="window" class="navtext">個人網站</a></li>
-							<li><a href="#phone" data-rel="popup"
+							<li><a href="#phone" data-rel="popup" data-icon="grid" data-iconpos="top"
 								data-transition="slidedown" data-position-to="window" class="navtext">打電話 </a></li>
 						</ul>
 					</div>
 					<div id="infoPost" style="width: 100%;">
-						<ul data-role="listview" style="margin: 0px 10px 0px 0px;">
+						<ul data-role="listview" style="margin: 3px 3px 3px 3px;">
 							<li class="news">
 								<h4>[新聞]標題</h4>
 								<p>摘要:blah blah blah...</p>
@@ -200,48 +205,23 @@
 				var addrName = new Array();
 				var i = 0;
 				if (data.feed.entry[idNum].gsx$offadd) {
-					// 							$("#addrList")
-					// 									.append(
-					// 											"<li data-icon=\"false\"><a href='map.html' rel='external' onclick=\"setAddr(data.feed.entry[idNum].gsx$offadd.$t);\">"
-					// 													+ data.feed.entry[idNum].gsx$offadd.$t
-					// 													+ "</a></li>");
 					addr[i] = data.feed.entry[idNum].gsx$offadd.$t;
 					addrName[i++] = "國會辦公室";
 					addrFlag = true;
 				}
 				if (data.feed.entry[idNum].gsx$_dnp34) {
-					// 							$("#addrList").append(
-					// 									"<li data-icon=\"false\">"
-					// 											+ data.feed.entry[idNum].gsx$_dnp34.$t
-					// 											+ data.feed.entry[idNum].gsx$_dp3nl.$t
-					// 											+ data.feed.entry[idNum].gsx$_df9om.$t
-					// 											+ "</li>");
 					addr[i] = data.feed.entry[idNum].gsx$_dnp34.$t
 							+ data.feed.entry[idNum].gsx$_dp3nl.$t
 							+ data.feed.entry[idNum].gsx$_df9om.$t;
 					addrName[i++] = data.feed.entry[idNum].gsx$_dnp34.$t
 							+ data.feed.entry[idNum].gsx$_dp3nl.$t + "服務處";
 					if (data.feed.entry[idNum].gsx$_dxj3v) {
-						// 								$("#addrList")
-						// 										.append(
-						// 												"<li data-icon=\"false\">"
-						// 														+ data.feed.entry[idNum].gsx$_dxj3v.$t
-						// 														+ data.feed.entry[idNum].gsx$_dyxo8.$t
-						// 														+ data.feed.entry[idNum].gsx$_e0c8p.$t
-						// 														+ "</li>");
 						addr[i] = data.feed.entry[idNum].gsx$_dxj3v.$t
 								+ data.feed.entry[idNum].gsx$_dyxo8.$t
 								+ data.feed.entry[idNum].gsx$_e0c8p.$t;
 						addrName[i++] = data.feed.entry[idNum].gsx$_dxj3v.$t
 								+ data.feed.entry[idNum].gsx$_dyxo8.$t + "服務處";
 						if (data.feed.entry[idNum].gsx$_e7d2q) {
-							// 									$("#addrList")
-							// 											.append(
-							// 													"<li data-icon=\"false\">"
-							// 															+ data.feed.entry[idNum].gsx$_e7d2q.$t
-							// 															+ data.feed.entry[idNum].gsx$_e8rn7.$t
-							// 															+ data.feed.entry[idNum].gsx$_ea67k.$t
-							// 															+ "服務處</a></li>");
 							addr[i] = data.feed.entry[idNum].gsx$_e7d2q.$t
 									+ data.feed.entry[idNum].gsx$_e8rn7.$t
 									+ data.feed.entry[idNum].gsx$_ea67k.$t;
@@ -249,13 +229,6 @@
 									+ data.feed.entry[idNum].gsx$_e8rn7.$t
 									+ "服務處";
 							if (data.feed.entry[idNum].gsx$_eleqw) {
-								// 										$("#addrList")
-								// 												.append(
-								// 														"<li data-icon=\"false\">"
-								// 																+ data.feed.entry[idNum].gsx$_e5yid.$t
-								// 																+ data.feed.entry[idNum].gsx$_eilm2.$t
-								// 																+ data.feed.entry[idNum].gsx$_ek06j.$t
-								// 																+ "</li>");
 								addr[i] = data.feed.entry[idNum].gsx$_e5yid.$t
 										+ data.feed.entry[idNum].gsx$_eilm2.$t
 										+ data.feed.entry[idNum].gsx$_ek06j.$t;
@@ -285,7 +258,19 @@
 						navigator.app.loadUrl(url, {
 							openExternal : true
 						});
-						return false;
+					}
+					function parseWeb(url){
+						if(url.search("facebook")>=0){
+							if(url.search("/pages/")>=0){
+								return "Facebook 粉絲專頁";
+							} else {
+								return "Facebook: "+url.slice(url.lastIndexOf("/",url.length-1)+1);
+							}
+						}else if(url.search("roodo")>=0){
+							return "樂多日誌";
+						} else {
+							return url;
+						}
 					}
 					var websiteFlag = false;
 					//Facebook
@@ -294,8 +279,8 @@
 								.append(
 										"<li data-icon=\"false\"><a onclick=\"load('"
 												+ data.feed.entry[idNum].gsx$socialfb.$t
-												+ "\')\">"
-												+ data.feed.entry[idNum].gsx$socialfb.$t
+												+ "')\">"
+												+ parseWeb(data.feed.entry[idNum].gsx$socialfb.$t)
 												+ "</a></li>");
 						if (data.feed.entry[idNum].gsx$_d9ney) {
 							$("#websiteList")
@@ -303,7 +288,7 @@
 											"<li data-icon=\"false\"><a onclick=\"load('"
 													+ data.feed.entry[idNum].gsx$_d9ney.$t
 													+ "\')\">"
-													+ data.feed.entry[idNum].gsx$_d9ney.$t
+													+ parseWeb(data.feed.entry[idNum].gsx$_d9ney.$t)
 													+ "</a></li>");
 							if (data.feed.entry[idNum].gsx$_db1zf) {
 								$("#websiteList")
@@ -311,7 +296,7 @@
 												"<li data-icon=\"false\"><a onclick=\"load('"
 														+ data.feed.entry[idNum].gsx$_db1zf.$t
 														+ "\')\">"
-														+ data.feed.entry[idNum].gsx$_db1zf.$t
+														+ parseWeb(data.feed.entry[idNum].gsx$_db1zf.$t)
 														+ "</a></li>");
 							}
 						}
@@ -321,20 +306,20 @@
 					if (data.feed.entry[idNum].gsx$offblog.$t) {
 						$("#websiteList")
 								.append(
-										"<li data-icon=\"false\"><a href=\""+data.feed.entry[idNum].gsx$offblog.$t+"\" rel=\"external\" target=\"_system\">"
-												+ data.feed.entry[idNum].gsx$offblog.$t
+										"<li data-icon=\"false\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$offblog.$t+"')\">"
+												+ parseWeb(data.feed.entry[idNum].gsx$offblog.$t)
 												+ "</a></li>");
 						if (data.feed.entry[idNum].gsx$_cu76f) {
 							$("#websiteList")
 									.append(
-											"<li data-icon=\"false\"><a href=\""+data.feed.entry[idNum].gsx$_cu76f.$t+"\" rel=\"external\" target=\"_system\">"
-													+ data.feed.entry[idNum].gsx$_cu76f.$t
+											"<li data-icon=\"false\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$_cu76f.$t+"')\">"
+													+ parseWeb(data.feed.entry[idNum].gsx$_cu76f.$t)
 													+ "</a></li>");
 							if (data.feed.entry[idNum].gsx$_cvlqs) {
 								$("#websiteList")
 										.append(
-												"<li data-icon=\"false\"><a href=\""+data.feed.entry[idNum].gsx$_cvlqs.$t+"\" rel=\"external\" target=\"_system\">"
-														+ data.feed.entry[idNum].gsx$_cvlqs.$t
+												"<li data-icon=\"false\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$_cvlqs.$t+"')\">"
+														+ parseWeb(data.feed.entry[idNum].gsx$_cvlqs.$t)
 														+ "</a></li>");
 							}
 						}
@@ -434,35 +419,80 @@
 					if (!phoneFlag) {
 						$("#phoneNumList").append("<li>目前沒有電話資料!</li>");
 					}
-					if (height / 60 > width / 30) {
-						$(".myfont").attr(
-								"style",
-								"font-size:" + width / 33 + "px; margin:"
-										+ width / 66 + "px");
-						$(".list").attr("style",
-								"padding: " + width / 66 + "px");
-					} else {
-						$(".myfont").attr(
-								"style",
-								"font-size:" + height / 60 + "px; margin:"
-										+ height / 120 + "px");
-						$(".list").attr("style",
-								"padding: " + height / 120 + "px");
-					}
 				</script>
 				<script type="text/javascript">
-				if(height/54>width/30){
-					$(".myfont").attr("style", "font-size:"+width/33+"px; margin:"+width/66+"px");
-					$(".list").attr("style", "padding: "+width/132+"px");
-				} else {
-					$(".myfont").attr("style", "font-size:"+height/54+"px; margin:"+height/108+"px");
-					$(".list").attr("style", "padding: "+height/216+"px;");
-				} 
-				
+  				/*
+  				* Initialize the layout to fit the divice otientation
+  				*/
+  				function initLayout(){
+  					var divH, divW;
+					if($(window).width()>$(window).height()){//水平
+  	  					document.getElementById("vertical").style.width = "50%";
+  	  					document.getElementById("profile").style.height = $(window).width()/16*5-10+"px";
+  	  					document.getElementById('horizontal').style.width = "50%";
+						document.getElementById('horizontal').appendChild(document.getElementById('infoPost'));
+						divH = $(window).width()/16*5-10;
+						divW = $(window).width()/4;
+					} else {
+  	  					document.getElementById("vertical").style.width = "100%";
+						document.getElementById("profile").style.height = "33%";
+						divH = $(window).height()/3;
+						divW = $(window).width()/2;
+					}
+					//調整字體大小
+					var fontsize;
+					if(divH/18 > divW/14){
+						fontsize = divW/14;
+					} else {
+						fontsize = divH/18;
+					}
+					//alert(divH+", "+divW+", "+fontsize);
+					$(".myfont").attr("style", "font-size:"+fontsize+"px; margin:"+fontsize/2+"px");
+					$(".list").attr("style", "padding: "+fontsize/4+"px");
+  				}
+  				// Listen for orientation changes
+  				$( window ).on( "orientationchange", function(event) {
+  					setTimeout(function (){
+  						var divH, divW;
+  	  					if(window.orientation == 0 || window.orientation == 180){
+  	  	  					document.getElementById("vertical").style.width = "100%";
+  							document.getElementById("profile").style.height = "33%";
+  							document.getElementById('vertical').appendChild(document.getElementById('infoPost'));
+  							$("#infoPost").height($(window).height()*0.66-$("#navbar").height()-10-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+  							$("#infoPost").getNiceScroll().resize();
+  							divH = $(window).height()/3;
+  							divW = $(window).width()/2;
+  						} else {
+  	  	  					document.getElementById("vertical").style.width = "50%";
+  	  	  					document.getElementById("profile").style.height = $(window).width()/16*5-10+"px";
+  	  	  					document.getElementById('horizontal').style.width = "50%";
+  							document.getElementById('horizontal').appendChild(document.getElementById('infoPost'));
+  							$("#infoPost").height($(window).height()-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+  							$("#infoPost").getNiceScroll().resize();
+  							divH = $(window).width()/16*5-10;
+  							divW = $(window).width()/4;
+  						}
+  						//調整字體大小
+  						var fontsize;
+  						if(divH/18 > divW/14){
+  							fontsize = divW/14;
+  						} else {
+  							fontsize = divH/18;
+  						}
+  						//alert(divH+", "+divW+", "+fontsize);
+  						$(".myfont").attr("style", "font-size:"+fontsize+"px; margin:"+fontsize/2+"px");
+  						$(".list").attr("style", "padding: "+fontsize/4+"px");
+  					},250);//Android系統詭異的需要delay才能更新成正確的長寬
+  				});
+				//加上scroll
 				$(document).ready(
-					function() { 
-						$("#infoPost").height(height*0.66-$("#navbar").height()-$("#header").height()-parseInt($(".ui-content").css("padding-left"))*2);
-						$("#infoPost").niceScroll();
+					function() {
+						if($(window).width()>$(window).height()){
+							$("#infoPost").height($(window).height()-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+						} else {
+							$("#infoPost").height($(window).height()*0.66-$("#navbar").height()-10-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+						}
+						$("#infoPost").niceScroll({cursorcolor:"#222222"});
 					});
 				</script>
 			</div>

@@ -1,0 +1,167 @@
+<!DOCTYPE HTML>
+<HTML>
+<head>
+<meta charset="UTF-8">
+<title>ProposalInfo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script	src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+<script src="cordova.js"></script>
+<script type="text/javascript">
+	var data;
+	var idNum;
+	function findProposal(id){
+		for(var i=0; i<data.feed.entry.length;i++){
+			if(data.feed.entry[i].gsx$id.$t == id){
+				return i;
+			}
+		}
+		alert("Error: 無法找到此提案!");
+		return 1;
+	}
+	function parse(json) {
+		data = json;
+	}
+</script>
+<script type='text/javascript'
+	src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdGRoLVBXdFRLN0RuR2lmMFlMY1JkOEE/od6/public/values?alt=json-in-script&callback=parse'></script>
+<script src="jquery.nicescroll.js"></script>
+</head>
+<body>
+	<div data-role="page" id="proposalInfoPage">
+		<div id="header" data-role="header">
+			<a href="proposals.html" data-icon="arrow-l" rel="external">Back</a>
+			<h4></h4>
+			<a href="index.html" data-icon="home">Home</a>
+		</div>
+		<div data-role="content">
+			<div class="ui-gird-a" style="height: 100%; width: 100%;">
+				<div class="ui-block-a" id="vertical" style="height: 100%; width: 100%;">
+				<!-- Home -->
+
+					<div data-role="collapsible-set">
+						<div data-role="collapsible" data-collapsed="false">
+							<h3>提案名稱</h3>
+							<p id="title"></p>
+						</div>
+						<div data-role="collapsible" data-collapsed="true">
+							<h3>提案委員/單位</h3>
+							<p id="proposer" style="margin:10px 5px 5px">主提案人: </p>
+							<p id="consigner" style="margin:5px 5px 10px">連署提案人: </p>
+						</div>
+						<div data-role="collapsible" data-collapsed="ture">
+							<h3>提案內容</h3>
+							<p id="content"></p>
+						</div>
+						<div data-role="collapsible" data-collapsed="true">
+							<h3>審議進度</h3>
+							<table id="progress">
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="ui-block-b" id="horizontal"></div>
+			</div>
+		</div>
+		<script type="text/javascript">
+		//以外部瀏覽器開啟連結
+		function load(url) {
+			navigator.app.loadUrl(url, {
+				openExternal : true
+			});
+		}
+/* 		//尋找與該提案有關的提案
+		function findRelative(proposalId){
+			//相同名稱的提案
+			//被標註相同標籤的提案
+		}
+		//增加標籤
+		function addTag(proposalId, tag){
+			
+		} */
+			idNum = findProposal(window.localStorage["proposalId"]);
+			$("#title").append(data.feed.entry[idNum].gsx$title.$t);
+			var proposer = data.feed.entry[idNum].gsx$proposer.$t.split(",");
+			for(var i=0;i<proposer.length;i++){
+				$("#proposer").append("<a href='profile.html' rel='external' id='"+proposer[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+proposer[i]+"</a>");
+				//if(i != proposer.length-1){$("#proposer").append(", ");}
+				$("#"+proposer[i]).click(function(){
+					window.localStorage["name"]=$(this).attr("id");
+				});
+			}
+			var consigner = data.feed.entry[idNum].gsx$consigner.$t.split(",");
+			for(var i=0;i<consigner.length;i++){
+				$("#consigner").append("<a href='profile.html' rel='external' id='"+consigner[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+consigner[i]+"</a>");
+				//if(i != consigner.length-1){$("#consigner").append(", ");}
+				$("#"+consigner[i]).click(function(){
+					window.localStorage["name"]=$(this).attr("id");
+					alert(this.attr("id")+", "+window.localStorage["name"]);
+				});
+			}
+			$("#content").append("<a onclick=\"load('"+data.feed.entry[idNum].gsx$content.$t+"')\" class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>提案影像</a>");
+			var process = (data.feed.entry[idNum].gsx$proposedate.$t+" 提案,"+data.feed.entry[idNum].gsx$history.$t).split(",");
+			var colNum = Math.floor(($(window).width()-60-77)/100)+1;
+			var rowNum = Math.ceil(process.length/colNum);
+			var eachRow = Math.ceil(process.length/rowNum);
+			//alert("col:"+colNum+", row:"+rowNum+", each:"+eachRow+", length:"+process.length);
+			var dateRow;
+ 			var valueRow;
+ 			var date;
+			var value;
+			var year;
+			var mon;
+			var day;
+			var count;
+ 			for(var i=0;i<rowNum-1/* process.length */;i++){
+ 				dateRow = "<tr>";
+ 	 			valueRow = "<tr>";
+ 				for(var j=0; j<colNum;j++){
+ 					if(j<eachRow){
+ 						count = i*eachRow+j;
+ 						//alert(count);
+ 		 				date = process[count].slice(0, process[count].indexOf(" "));
+ 						value = process[count].slice(process[count].indexOf(" ")+1);
+ 						year = date.slice(0, date.length-4);
+ 						mon = date.slice(date.length-4, date.length-2);
+ 						day = date.slice(date.length-2, date.length);
+ 						dateRow += "<td>"+year+"/"+mon+"/"+day+"</td>";
+ 						dateRow += "<td rowspan='2'>→</td>";
+ 						valueRow+= "<td>"+value+"</td>";
+ 					} else if(j<colNum-1){
+ 						dateRow += "<td></td>";
+ 						dateRow += "<td rowspan='2'></td>";
+ 						valueRow+= "<td></td>";
+ 					} else {
+ 						dateRow += "<td></td>";
+ 						valueRow+= "<td></td>";
+ 					}
+ 				}
+ 				$("#progress").append(dateRow+"</tr>"+valueRow+"</tr>");
+			}
+ 			//最後一行
+ 			dateRow = "<tr>";
+ 	 		valueRow = "<tr>";
+			for(var j=0; j<colNum;j++){
+				if(j<colNum-(process.length-(rowNum-1)*eachRow)){
+					dateRow += "<td></td>";
+ 					dateRow += "<td rowspan='2'></td>";
+ 					valueRow+= "<td></td>";
+				} else {
+					count = j-colNum+process.length;
+					//alert(count);
+	 				date = process[count].slice(0, process[count].indexOf(" "));
+					value = process[count].slice(process[count].indexOf(" ")+1);
+					year = date.slice(0, date.length-4);
+					mon = date.slice(date.length-4, date.length-2);
+					day = date.slice(date.length-2, date.length);
+					dateRow += "<td>"+year+"/"+mon+"/"+day+"</td>";
+ 					if(count != process.length-1){ dateRow += "<td rowspan='2'>→</td>"; }
+ 					valueRow+= "<td>"+value+"</td>";
+				}
+ 			}
+			$("#progress").append(dateRow+"</tr>"+valueRow+"</tr>");
+		</script>
+	</div>
+</body>
+</HTML>

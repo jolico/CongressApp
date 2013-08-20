@@ -8,13 +8,22 @@
 		 <script src="cordova.js"></script>
 		 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 		 <script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
-
 	 </head>
 	 <body>
-	 <div data-role="page" id="home">
+	 <div data-role="page" id="homePage">
 	 	<a data-role="button" href="legislators.html" rel="external">以立法委員搜尋</a>
-	 	<a data-role="button" href="#">以議題搜尋</a>
+	 	<a data-role="button" href="proposals.html" rel="external">以議題搜尋</a>
 <!-- 	 	<a data-role="button" href="map.html" rel="external">map test</a> -->
 	 </div>
+	 <script type="text/javascript">
+	 //檢查網路連線
+	 $(document).on('pagebeforeshow',"#home",function(){
+		setInterval(function () {
+	 		if(!navigator.onLine){
+	 			alert("本服務需要網路連線，請確認裝置連線狀態並重試！");
+	 		}
+	 	},5000);
+	 });
+	 </script>
 	 </body>
 </HTML>
