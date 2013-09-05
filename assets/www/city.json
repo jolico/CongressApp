@@ -1,0 +1,34 @@
+{
+	"city":{
+		{
+			"city_name":"臺北市",
+			"district":[
+				{
+					"district_name":"北投區",
+					"electoral_district":"台北市, 第一選區",
+				},
+				{
+					"district_name":"士林區",
+					"electoral_district":"台北市, 第一選區",
+				},
+				{
+					"district_name":"大同區",
+					"electoral_district":"台北市, 第一選區",
+				},
+				{
+					"district_name":"士林區",
+					"electoral_district":"台北市, 第一選區",
+				},
+				{
+					"district_name":"士林區",
+					"electoral_district":"台北市, 第一選區",
+				},
+				{
+					"district_name":"士林區",
+					"electoral_district":"台北市, 第一選區",
+				},
+				
+			]
+		}
+	}
+}

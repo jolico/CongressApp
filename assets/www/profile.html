@@ -1,259 +1,426 @@
 <!DOCTYPE HTML>
 <HTML>
-<head>
-<meta charset="UTF-8">
-<title>LegislatorsProfile</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
-<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
-<script src="cordova.js"></script>
-<script type="text/javascript">
-	var data;
-	var name = window.localStorage["name"];
-	var idNum;// = window.localStorage["idNum"];
-	//將與委員有關的資料列表
-	function refreshInfoList(){
-		//提案
-		//立法院網站:http://www.ly.gov.tw/innerIndex.action
-			//會議出席
-			//投票
-			//發言
-	}
-	//統計該委員的提案數(存入資料庫?)
-	//以委員姓名尋找,回傳id
-	function findLegislator(name){
-		for(var i=0; i<data.feed.entry.length;i++){
-			if(data.feed.entry[i].gsx$name.$t == name){
-				return i;
+	<head>
+		<meta charset="UTF-8">
+		<title>LegislatorsProfile</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- cordova -->
+		<script src="cordova.js"></script>
+		<!-- jquery -->
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<!-- jquery mobile -->
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+		<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
+		<!-- jquery.nicescroll -->
+		<script src="jquery.nicescroll.js"></script>
+		<!-- 立法委員資料 -->
+		<script type="text/javascript">
+		var lgsData = JSON.parse(window.localStorage["lgsData"]);
+		var prpData = JSON.parse(window.localStorage["prpData"]);
+		var newsData;
+		var lgsId;
+		var info = new Array();
+		var time = new Array();
+		var date, str, list="";
+		var initEmailFlag = false,
+			initAddrFlag = false,
+			initWebFlag = false,
+			initPhoneFlag = false,
+			initPartyFlag = false,
+			initCommFlag = false;
+/* 		function loadLgsData(json){
+			lgsData = json;	
+		}
+		function loadPrpData(json){
+			prpData = json;	
+		} */
+		//將與委員有關的資料列表
+		function initInfoList(){
+			//立法院網站:http://www.ly.gov.tw/innerIndex.action
+			$.when(
+				$.get("http://www.ly.gov.tw/01_lyinfo/0103_legnews/legnewsList.action"),
+				$.get("http://www.ly.gov.tw/01_lyinfo/0103_legnews/legnewsList.action?d-5419-p=2"),
+				$.get("http://www.ly.gov.tw/01_lyinfo/0103_legnews/legnewsList.action?d-5419-p=3")
+			).done(function(data1,data2,data3){
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
+				//委員新聞
+				//alert("data1:"+data1[1]+", data2:"+data2[1]);
+				//alert("success");
+				getRelNews(data1[0]);
+				getRelNews(data2[0]);
+				getRelNews(data3[0]);
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
+				//會議出席
+				//投票
+				//發言
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
+				//提案
+				getRelPrp();
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
+					//加入infolist
+					//alert("time"+time);
+				if(info.length!=0){
+					//alert("adding list");
+					for(var i=0; i<info.length; i++){
+						list += info[i];
+					}
+					//alert(list);
+					$("#infoList").append(list).listview("refresh");
+					$("#infoPost").getNiceScroll().resize();
+				}
+			}).fail(function(data1,data2,data3){
+				alert("$.get failed!");
+				alert("data1:"+data1[1]+", data2:"+data2[1]);
+				if(data1[1]=="success"){
+					getRelNews(data1[0]);
+				}
+				if(data2[1]=="success"){
+					getRelNews(data2[0]);
+				}
+				if(data3[1]=="success"){
+					getRelNews(data3[0]);
+				}
+				getRelPrp();
+				if(info.length!=0){
+					for(var i=0; i<info.length; i++){
+						list += info[i];
+					}
+					//alert(list);
+					$("#infoList").append(list).listview("refresh");
+					$("#infoPost").getNiceScroll().resize();
+				}
+			});
+		}
+		//傳入html文檔,parse新聞資料,尋找與該位委員有關的資料存入info和time
+		function getRelNews(data){
+			newsData = data.substring(data.indexOf("<tbody", data.search('id="t1"')),
+					  data.indexOf("</tbody", data.search('id="t1"'))+8);
+			//alert(newsData);
+			var matchedNews = new Array();
+			var newsTime;
+			var index = newsData.search(lgsData.feed.entry[lgsId].gsx$name.$t);
+			for(var i=0; index>=0; i++){
+				var oriData = newsData.substring(newsData.lastIndexOf("<tr", index),
+											 newsData.indexOf("</tr", index)+4);
+				var tdIndex;
+				matchedNews[i] = new Array(5);
+				for(var j=0; j<3; j++){
+					tdIndex =  oriData.search("<td");
+					matchedNews[i][j] = oriData.substring(oriData.indexOf(">", tdIndex)+1,
+							oriData.indexOf("</td", tdIndex));
+					oriData = oriData.substring(oriData.indexOf("</td>", tdIndex)+5);
+				}
+				matchedNews[i][3] = oriData.substring(oriData.indexOf("href")+6,
+					oriData.indexOf("'", oriData.indexOf("href")+6));
+				matchedNews[i][4] = oriData.substring(oriData.indexOf(">",oriData.indexOf("href"))+1,
+					oriData.indexOf('<', oriData.indexOf("href")));
+				
+				newsTime = matchedNews[i][0].split("-");
+				date = new Date(newsTime[1]+"/"+newsTime[2]+"/"+newsTime[0]);
+				str = "<li class='news'><a onclick=\"load('"
+					+"http://www.ly.gov.tw"+matchedNews[i][3]
+					+"');\" rel='external'><h4 style='white-space: normal;'>[新聞] "
+					+matchedNews[i][4]
+					+"</h4><p style='white-space: normal;'>摘要: "
+					//+prpData.feed.entry[i].gsx$summary.$t
+					+"</p><p class='ui-li-aside' style='width:auto;'>"
+					+newsTime[1]+"/"+newsTime[2]+"/"+newsTime[0]
+					+"</p></a></li>";
+				//alert(str);
+				//alert(date);
+				if(time.length == 0 || (time.length != 0 && date<time[time.length-1])){
+					time.push(date);
+					info.push(str);
+				} else {
+					for(var j=0; j<time.length; j++){
+						if(date>time[j]){
+							time.splice(j, 0, date);
+							info.splice(j, 0, str);
+						}
+						break;
+					}
+				}
+				//alert("time"+time);
+				newsData = newsData.substring(newsData.indexOf("</tr", index)+5);
+				index = newsData.search(lgsData.feed.entry[lgsId].gsx$name.$t);
 			}
 		}
-		alert("Error: 無法找到此位委員!");
-		return 2;
-	}
-	function parse(json) {
-		data = json;
-	}
-</script>
-<script type='text/javascript'
-	src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=parse'></script>
-<script src="jquery.nicescroll.js"></script>
-</head>
-<body  onload="initLayout();">
-	<div data-role="page" id="profilePage">
-		<div id="header" data-role="header">
-			<a href="legislators.html" data-icon="arrow-l" rel="external">Back</a>
-			<a href="index.html" data-icon="home">Home</a>
-		</div>
-		<script type="text/javascript">
-			idNum = findLegislator(name);
-			$("#header").append("<h4>" + data.feed.entry[idNum].gsx$name.$t + "</h4>");
+		//搜尋提案json資料,尋找與該位委員有關的資料存入info和time
+		function getRelPrp(){
+			//提案
+			for(var i=0; i<prpData.feed.entry.length; i++){
+				//主提案
+				if(prpData.feed.entry[i].gsx$proposer.$t.search(lgsData.feed.entry[lgsId].gsx$name.$t)>=0){
+					date = new Date(prpDateToDate(prpData.feed.entry[i].gsx$proposedate.$t));
+					var coworker="";
+					var proposer = prpData.feed.entry[i].gsx$proposer.$t.split(":");
+					for(var j=0; j<proposer.length; j++){
+						if(proposer[j]!=lgsData.feed.entry[lgsId].gsx$name.$t){
+							coworker += proposer[j] + ":";
+						}
+					}
+					if(coworker.length>0){
+						coworker = "與"+coworker.slice(0,coworker.length-1)+"共同提案";
+					}
+					str = "<li class='proposal'><a href='proposalInfo.html' onclick=\"window.localStorage['proposalId']='"
+						+prpData.feed.entry[i].gsx$id.$t
+						+"';\" rel='external'><h4 style='white-space: normal;'>[提案] "
+						+prpData.feed.entry[i].gsx$title.$t
+						+"</h4><p style='white-space: normal;'>"
+						+coworker+"<br>摘要:"+"<br>審議進度: "
+						+prpData.feed.entry[i].gsx$process.$t
+						+"</p><p class='ui-li-aside' style='width:auto;'>"
+						+prpDateToDate(prpData.feed.entry[i].gsx$proposedate.$t)
+						+"</p></a></li>";
+					if(time.length == 0 || (time.length != 0 && date<time[time.length-1])){
+						time.push(date);
+						info.push(str);
+					} else {
+						for(var j=0; j<time.length; j++){
+							if(date>time[j]){
+								time.splice(j, 0, date);
+								info.splice(j, 0, str);
+							}
+							break;
+						}
+					}
+				}
+				//連署提案
+				if(prpData.feed.entry[i].gsx$consigner.$t.search(lgsData.feed.entry[lgsId].gsx$name.$t)>=0){
+					date = new Date(prpDateToDate(prpData.feed.entry[i].gsx$proposedate.$t));
+					str = "<li class='proposal'><a href='proposalInfo.html' onclick=\"window.localStorage['proposalId']='"
+						+prpData.feed.entry[i].gsx$id.$t
+						+"';\" rel='external'><h4 style='white-space: normal;'>[連署提案] "
+						+prpData.feed.entry[i].gsx$title.$t
+						+"</h4><p style='white-space: normal;'>由"
+						+prpData.feed.entry[i].gsx$proposer.$t
+						+"提案<br>摘要: "
+						+prpData.feed.entry[i].gsx$summary.$t
+						+"</p><p class='ui-li-aside' style='width:auto;'>"
+						+prpDateToDate(prpData.feed.entry[i].gsx$proposedate.$t)
+						+"</p></a></li>";
+					if(time.length == 0 || (time.length != 0 && date<time[time.length-1])){
+						time.push(date);
+						info.push(str);
+					} else {
+						for(var j=0; j<time.length; j++){
+							if(date>time[j]){
+								time.splice(j, 0, date);
+								info.splice(j, 0, str);
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+		//獎資料庫中的日期形式改為javascript能讀取的形式
+		function prpDateToDate(prpDate){
+			var year = parseInt(prpDate.slice(0, prpDate.length-4))+1911;
+			var mon = prpDate.slice(prpDate.length-4, prpDate.length-2);
+			var day = prpDate.slice(prpDate.length-2);
+			return mon+"/"+day+"/"+year;
+		}
+		//統計該委員的提案數(存入資料庫?)
+		//以委員姓名尋找,回傳id
+		function findLegislator(name){
+			for(var i=0; i<lgsData.feed.entry.length;i++){
+				if(lgsData.feed.entry[i].gsx$name.$t == name){
+					return i;
+				}
+			}
+			alert("Error: 無法找到此位委員!");
+			return 2;
+		}
 		</script>
-		<div data-role="content">
-			<div class="ui-gird-a" style="height: 100%; width: 100%;">
-				<div class="ui-block-a" id="vertical" style="height: 100%; width: 100%;">
-					<div class="ui-grid-a" id="profile" style="width: 100%;">
-						<div class="ui-block-a" style="height: 100%; width: 50%; text-align: center;">
-							<img id="photo" alt="" src="" style="height: 100%;">
-							<script type="text/javascript">
-								var url = data.feed.entry[idNum].gsx$_d2mkx.$t;
-								var photoUrl = "http://www.ly.gov.tw/upload/01_introduce/0103_leg/LGpicture/"
-										+ url.slice(71)
-										+ url.slice(60, 64)
-										+ ".jpg";
-								$("#photo").attr("src", photoUrl);
-							</script>
+		<!-- <script type='text/javascript' 
+		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=loadLgsData'></script> -->
+<!-- 		<script type='text/javascript' 
+		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdGRoLVBXdFRLN0RuR2lmMFlMY1JkOEE/od6/public/values?alt=json-in-script&callback=loadPrpData'></script> -->
+	</head>
+	<body  onload="initLayout();">
+		<div data-role="page" id="profilePage">
+			<div id="header" data-role="header">
+				<a href="legislators.html" data-icon="arrow-l" rel="external" data-rel="back">Back</a>
+				<a href="index.html" data-icon="home">Home</a>
+			</div>
+			<script type="text/javascript">
+				lgsId = findLegislator(window.localStorage["name"]);
+				$("#header").append("<h4>" + lgsData.feed.entry[lgsId].gsx$name.$t + "</h4>");
+			</script>
+			<div data-role="content">
+				<div class="ui-gird-a" style="height: 100%; width: 100%;">
+					<div class="ui-block-a" id="vertical" style="height: 100%; width: 100%;">
+						<div class="ui-grid-a" id="profile" style="width: 100%; height: 33%">
+							<div class="ui-block-a" style="height: 100%; width: 50%; text-align: center;">
+								<img id="photo" alt="" src="" style="height: 100%;">
+								<script type="text/javascript">
+									var url = lgsData.feed.entry[lgsId].gsx$_d2mkx.$t;
+									var photoUrl = "http://www.ly.gov.tw/upload/01_introduce/0103_leg/LGpicture/"
+											+ url.slice(71)
+											+ url.slice(60, 64)
+											+ ".jpg";
+									$("#photo").attr("src", photoUrl);
+								</script>
+							</div>
+							<div class="ui-block-b" style="height: 100%; width: 50%;">
+								<ul data-role="listview" data-inset="true" style="height: 100%; width: 100%; margin: 0;"  data-icon="false">
+									<li class="list">
+										<a href="#sessionDiv" id="session" data-rel="popup" data-position-to="window"
+										 style="margin: 0;padding: 0">
+											<p class="myfont">屆數:</p>
+											<h4 class='myfont'>第八屆</h4>
+										</a>
+									</li>
+									<li class="list">
+										<a href="#partyDiv" id="party" data-rel="popup" data-position-to="window"
+										onclick="if(!initPartyFlag){initPartyDiv();}" style="margin: 0;padding: 0">
+											<p class="myfont">黨籍:</p>
+										</a>
+									</li>
+									<li class="list">
+										<a href="#cirDiv" id="cir" data-rel="popup" data-position-to="window"
+										 style="margin: 0;padding: 0">
+											<p class="myfont">選區:</p>
+										</a>
+									</li>
+									<li class="list">
+										<a href="#commDiv" id="comm" data-rel="popup" data-position-to="window"
+										onclick="if(!initCommFlag){initCommDiv();}" style="margin: 0;padding: 0">
+											<p class="myfont">委員會:</p>
+										</a>
+									</li>
+								</ul>
+								<script type="text/javascript">
+								//init基本資料
+								var cirText;
+									$("#party").append("<h4 class='myfont'>"+ lgsData.feed.entry[lgsId].gsx$party.$t+ "</h4>");
+									if (lgsData.feed.entry[lgsId].gsx$cir.$t == lgsData.feed.entry[lgsId].gsx$cirsub.$t) {
+										cirText = lgsData.feed.entry[lgsId].gsx$cir.$t;
+									} else {
+										cirText = lgsData.feed.entry[lgsId].gsx$cir.$t
+												  + ", "
+												  + lgsData.feed.entry[lgsId].gsx$cirsub.$t;
+									}
+									$("#cir").append("<h4 class='myfont'>"+ cirText+ "</h4>");
+									$("#comm").append("<h4 class='myfont'>"+ lgsData.feed.entry[lgsId].gsx$comm.$t+ "</h4>");
+								</script>
+							</div>
 						</div>
-						<div class="ui-block-b" style="height: 100%; width: 50%;">
-							<ul data-role="listview" data-divider-theme="c" data-inset="true" style="height: 100%; width: 100%; margin: 0;">
-								<li class="list" id="session" data-role="list-divider">
-									<p class="myfont">屆數:</p>
-									<h4 class='myfont'>第八屆</h4>
-								</li>
-								<li class="list" id="party" data-role="list-divider">
-									<p class="myfont">黨籍:</p>
-								</li>
-								<li class="list" id="cir" data-role="list-divider">
-									<p class="myfont">選區:</p>
-								</li>
-								<li class="list" id="comm" data-role="list-divider">
-									<p class="myfont">委員會:</p>
+						<div id="navbar" data-role="navbar" style="width: 100%; padding: 5px 0px 5px 0px;">
+							<ul>
+								<li><a href="#email" data-rel="popup" data-icon="info" data-iconpos="top"
+									data-transition="slidedown" data-position-to="window" class="navtext" 
+									onclick="if(!initEmailFlag){initEmailDiv();}">電子郵件</a></li>
+								<li><a href="map.html" data-icon="home" data-iconpos="top" rel='external' class="navtext"
+									onclick="if(!initAddrFlag){initAddrData();}">辦公室</a></li>
+								<li><a href="#socialWeb" data-rel="popup" data-icon="star" data-iconpos="top"
+									data-transition="slidedown" data-position-to="window" class="navtext" 
+									onclick="if(!initWebFlag){initWebDiv();}">個人網站</a></li>
+								<li><a href="#phone" data-rel="popup" data-icon="grid" data-iconpos="top"
+									data-transition="slidedown" data-position-to="window" class="navtext" 
+									onclick="if(!initPhoneFlag){initPhoneDiv();}">打電話 </a></li>
+							</ul>
+						</div>
+						<div id="infoPost" style="width: 100%;">
+							<ul id="infoList" data-role="listview" style="margin: 3px 3px 3px 3px;">
+								<li class="news">
+									<a href="#">
+									<h4>[新聞]標題</h4>
+									<p>摘要:blah blah blah...</p>
+									<p class="ui-li-aside">時間</p>
+									</a>
 								</li>
 							</ul>
 							<script type="text/javascript">
-								$("#party")
-										.append(
-												"<h4 class='myfont'>"
-														+ data.feed.entry[idNum].gsx$party.$t
-														+ "</h4>");
-								if (data.feed.entry[idNum].gsx$cir.$t == data.feed.entry[idNum].gsx$cirsub.$t) {
-									$("#cir")
-											.append(
-													"<h4 class='myfont'>"
-															+ data.feed.entry[idNum].gsx$cir.$t
-															+ "</h4>");
-								} else {
-									$("#cir")
-											.append(
-													"<h4 class='myfont'>"
-															+ data.feed.entry[idNum].gsx$cir.$t
-															+ ", "
-															+ data.feed.entry[idNum].gsx$cirsub.$t
-															+ "</h4>");
-								}
-								$("#comm")
-										.append(
-												"<h4 class='myfont'>"
-														+ data.feed.entry[idNum].gsx$comm.$t
-														+ "</h4>");
+								initInfoList();
 							</script>
 						</div>
 					</div>
-					<div id="navbar" data-role="navbar" style="width: 100%; padding: 5px 0px 5px 0px;">
-						<ul>
-							<li><a href="#email" data-rel="popup" data-icon="info" data-iconpos="top"
-								data-transition="slidedown" data-position-to="window" class="navtext">電子郵件</a></li>
-							<li><a href="map.html" data-icon="home" data-iconpos="top" rel='external' onclick="setAddr();" class="navtext">辦公室
-							</a></li>
-							<li><a href="#socialWeb" data-rel="popup" data-icon="star" data-iconpos="top"
-								data-transition="slidedown" data-position-to="window" class="navtext">個人網站</a></li>
-							<li><a href="#phone" data-rel="popup" data-icon="grid" data-iconpos="top"
-								data-transition="slidedown" data-position-to="window" class="navtext">打電話 </a></li>
-						</ul>
-					</div>
-					<div id="infoPost" style="width: 100%;">
-						<ul data-role="listview" style="margin: 3px 3px 3px 3px;">
-							<li class="news">
-								<h4>[新聞]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-							<li class="bill">								
-								<h4>[議案]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-							<li class="post">								
-								<h4>[文章]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-							<li class="activity">								
-								<h4>[活動]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-							<li class="bill">								
-								<h4>[類別]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-							<li class="bill">								
-								<h4>[類別]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-							<li class="bill">								
-								<h4>[類別]標題</h4>
-								<p>摘要:blah blah blah...</p>
-								<p class="ui-li-aside">時間</p>
-								<a href="#"></a>
-							</li>
-						</ul>
-					</div>
+					<div class="ui-block-b" id="horizontal"></div>
 				</div>
-				<div class="ui-block-b" id="horizontal"></div>
-			</div>
-
-			<div id="email" data-role="popup">
-				<ul id="emailList" data-role="listview" data-inset="true">
-					<li data-role="list-divider">點擊傳送電子郵件</li>
-				</ul>
-				<script type="text/javascript">
-						if (data.feed.entry[idNum].gsx$offemail1.$t) {
-							$("#emailList")
-									.append(
-											"<li data-icon=\"false\"><a href=\"mailto:"+data.feed.entry[idNum].gsx$offemail1.$t+"\">"
-													+ data.feed.entry[idNum].gsx$offemail1.$t
+	
+				<div id="email" data-role="popup">
+					<ul id="emailList" data-role="listview" data-inset="true">
+						<li data-role="list-divider">點擊傳送電子郵件</li>
+					</ul>
+					<script type="text/javascript">
+					function initEmailDiv(){
+						if (lgsData.feed.entry[lgsId].gsx$offemail1.$t) {
+							$("#emailList").append("<li data-icon=\"false\"><a href=\"mailto:"
+													+lgsData.feed.entry[lgsId].gsx$offemail1.$t+"\">"
+													+ lgsData.feed.entry[lgsId].gsx$offemail1.$t
 													+ "</a></li>");
-							if (data.feed.entry[idNum].gsx$offemail2.$t) {
-								$("#emailList")
-										.append(
-												"<li data-icon=\"false\"><a href=\"mailto:"+data.feed.entry[idNum].gsx$offemail2.$t+"\">"
-														+ data.feed.entry[idNum].gsx$offemail2.$t
+							if (lgsData.feed.entry[lgsId].gsx$offemail2.$t) {
+								$("#emailList").append("<li data-icon=\"false\"><a href=\"mailto:"
+														+lgsData.feed.entry[lgsId].gsx$offemail2.$t+"\">"
+														+ lgsData.feed.entry[lgsId].gsx$offemail2.$t
 														+ "</a></li>");
 							}
 						} else {
-							$("#emailList").append(
-									"<li>目前沒有電子郵件資料!</li>");
+							$("#emailList").append("<li>目前沒有電子郵件資料!</li>");
 						}
+						$("#emailList").listview("refresh");
+						initEmailFlag = true;
+					}
 					</script>
-			</div>
-			<!-- 				<div id="address" data-role="popup">
-					<ul id="addrList" data-role="listview" data-inset="true">
-						<li data-role="list-divider">服務處地址</li>
-					</ul> -->
-			<script type="text/javascript">
-				var addrFlag = false;
-				var addr = new Array();
-				var addrName = new Array();
-				var i = 0;
-				if (data.feed.entry[idNum].gsx$offadd) {
-					addr[i] = data.feed.entry[idNum].gsx$offadd.$t;
-					addrName[i++] = "國會辦公室";
-					addrFlag = true;
-				}
-				if (data.feed.entry[idNum].gsx$_dnp34) {
-					addr[i] = data.feed.entry[idNum].gsx$_dnp34.$t
-							+ data.feed.entry[idNum].gsx$_dp3nl.$t
-							+ data.feed.entry[idNum].gsx$_df9om.$t;
-					addrName[i++] = data.feed.entry[idNum].gsx$_dnp34.$t
-							+ data.feed.entry[idNum].gsx$_dp3nl.$t + "服務處";
-					if (data.feed.entry[idNum].gsx$_dxj3v) {
-						addr[i] = data.feed.entry[idNum].gsx$_dxj3v.$t
-								+ data.feed.entry[idNum].gsx$_dyxo8.$t
-								+ data.feed.entry[idNum].gsx$_e0c8p.$t;
-						addrName[i++] = data.feed.entry[idNum].gsx$_dxj3v.$t
-								+ data.feed.entry[idNum].gsx$_dyxo8.$t + "服務處";
-						if (data.feed.entry[idNum].gsx$_e7d2q) {
-							addr[i] = data.feed.entry[idNum].gsx$_e7d2q.$t
-									+ data.feed.entry[idNum].gsx$_e8rn7.$t
-									+ data.feed.entry[idNum].gsx$_ea67k.$t;
-							addrName[i++] = data.feed.entry[idNum].gsx$_e7d2q.$t
-									+ data.feed.entry[idNum].gsx$_e8rn7.$t
-									+ "服務處";
-							if (data.feed.entry[idNum].gsx$_eleqw) {
-								addr[i] = data.feed.entry[idNum].gsx$_e5yid.$t
-										+ data.feed.entry[idNum].gsx$_eilm2.$t
-										+ data.feed.entry[idNum].gsx$_ek06j.$t;
-								addrName[i++] = data.feed.entry[idNum].gsx$_e5yid.$t
-										+ data.feed.entry[idNum].gsx$_eilm2.$t
+				</div>
+				<script type="text/javascript">
+				function initAddrData(){
+					var addrFlag = false;
+					var addr = new Array();
+					var addrName = new Array();
+					var i = 0;
+					if (lgsData.feed.entry[lgsId].gsx$offadd) {
+						addr[i] = lgsData.feed.entry[lgsId].gsx$offadd.$t;
+						addrName[i++] = "國會辦公室";
+						addrFlag = true;
+					}
+					if (lgsData.feed.entry[lgsId].gsx$_dnp34) {
+						addr[i] = lgsData.feed.entry[lgsId].gsx$_dnp34.$t
+								+ lgsData.feed.entry[lgsId].gsx$_dp3nl.$t
+								+ lgsData.feed.entry[lgsId].gsx$_df9om.$t;
+						addrName[i++] = lgsData.feed.entry[lgsId].gsx$_dnp34.$t
+								+ lgsData.feed.entry[lgsId].gsx$_dp3nl.$t + "服務處";
+						if (lgsData.feed.entry[lgsId].gsx$_dxj3v) {
+							addr[i] = lgsData.feed.entry[lgsId].gsx$_dxj3v.$t
+									+ lgsData.feed.entry[lgsId].gsx$_dyxo8.$t
+									+ lgsData.feed.entry[lgsId].gsx$_e0c8p.$t;
+							addrName[i++] = lgsData.feed.entry[lgsId].gsx$_dxj3v.$t
+									+ lgsData.feed.entry[lgsId].gsx$_dyxo8.$t + "服務處";
+							if (lgsData.feed.entry[lgsId].gsx$_e7d2q) {
+								addr[i] = lgsData.feed.entry[lgsId].gsx$_e7d2q.$t
+										+ lgsData.feed.entry[lgsId].gsx$_e8rn7.$t
+										+ lgsData.feed.entry[lgsId].gsx$_ea67k.$t;
+								addrName[i++] = lgsData.feed.entry[lgsId].gsx$_e7d2q.$t
+										+ lgsData.feed.entry[lgsId].gsx$_e8rn7.$t
 										+ "服務處";
+								if (lgsData.feed.entry[lgsId].gsx$_eleqw) {
+									addr[i] = lgsData.feed.entry[lgsId].gsx$_e5yid.$t
+											+ lgsData.feed.entry[lgsId].gsx$_eilm2.$t
+											+ lgsData.feed.entry[lgsId].gsx$_ek06j.$t;
+									addrName[i++] = lgsData.feed.entry[lgsId].gsx$_e5yid.$t
+											+ lgsData.feed.entry[lgsId].gsx$_eilm2.$t
+											+ "服務處";
+								}
 							}
 						}
+						addrFlag = true;
 					}
-					addrFlag = true;
-				}
-				if (!addrFlag) {
-					$("#addrList").append("<li>目前沒有地址資料!</li>");
-				}
-				function setAddr() {
+					if (!addrFlag) {
+						$("#addrList").append("<li>目前沒有地址資料!</li>");
+					}
 					window.localStorage["addr"] = JSON.stringify(addr);
 					window.localStorage["addrName"] = JSON.stringify(addrName);
+					initAddrFlag = true;
 				}
-			</script>
-			<!-- 				</div> -->
-			<div id="socialWeb" data-role="popup">
-				<ul id="websiteList" data-role="listview" data-inset="true">
-					<li data-role="list-divider">個人網站</li>
-				</ul>
-				<script type="text/javascript">
+				</script>
+
+				<div id="socialWeb" data-role="popup">
+					<ul id="websiteList" data-role="listview" data-inset="true">
+						<li data-role="list-divider">個人網站</li>
+					</ul>
+					<script type="text/javascript">
 					function load(url) {
 						navigator.app.loadUrl(url, {
 							openExternal : true
@@ -272,231 +439,437 @@
 							return url;
 						}
 					}
-					var websiteFlag = false;
-					//Facebook
-					if (data.feed.entry[idNum].gsx$socialfb.$t) {
-						$("#websiteList")
-								.append(
-										"<li data-icon=\"false\"><a onclick=\"load('"
-												+ data.feed.entry[idNum].gsx$socialfb.$t
-												+ "')\">"
-												+ parseWeb(data.feed.entry[idNum].gsx$socialfb.$t)
-												+ "</a></li>");
-						if (data.feed.entry[idNum].gsx$_d9ney) {
+					function initWebDiv(){
+						var websiteFlag = false;
+						//Facebook
+						if (lgsData.feed.entry[lgsId].gsx$socialfb.$t) {
 							$("#websiteList")
 									.append(
 											"<li data-icon=\"false\"><a onclick=\"load('"
-													+ data.feed.entry[idNum].gsx$_d9ney.$t
-													+ "\')\">"
-													+ parseWeb(data.feed.entry[idNum].gsx$_d9ney.$t)
+													+ lgsData.feed.entry[lgsId].gsx$socialfb.$t
+													+ "')\">"
+													+ parseWeb(lgsData.feed.entry[lgsId].gsx$socialfb.$t)
 													+ "</a></li>");
-							if (data.feed.entry[idNum].gsx$_db1zf) {
+							if (lgsData.feed.entry[lgsId].gsx$_d9ney) {
 								$("#websiteList")
 										.append(
 												"<li data-icon=\"false\"><a onclick=\"load('"
-														+ data.feed.entry[idNum].gsx$_db1zf.$t
+														+ lgsData.feed.entry[lgsId].gsx$_d9ney.$t
 														+ "\')\">"
-														+ parseWeb(data.feed.entry[idNum].gsx$_db1zf.$t)
+														+ parseWeb(lgsData.feed.entry[lgsId].gsx$_d9ney.$t)
 														+ "</a></li>");
+								if (lgsData.feed.entry[lgsId].gsx$_db1zf) {
+									$("#websiteList")
+											.append(
+													"<li data-icon=\"false\"><a onclick=\"load('"
+															+ lgsData.feed.entry[lgsId].gsx$_db1zf.$t
+															+ "\')\">"
+															+ parseWeb(lgsData.feed.entry[lgsId].gsx$_db1zf.$t)
+															+ "</a></li>");
+								}
 							}
+							websiteFlag = true;
 						}
-						websiteFlag = true;
-					}
-					//部落格
-					if (data.feed.entry[idNum].gsx$offblog.$t) {
-						$("#websiteList")
-								.append(
-										"<li data-icon=\"false\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$offblog.$t+"')\">"
-												+ parseWeb(data.feed.entry[idNum].gsx$offblog.$t)
-												+ "</a></li>");
-						if (data.feed.entry[idNum].gsx$_cu76f) {
+						//部落格
+						if (lgsData.feed.entry[lgsId].gsx$offblog.$t) {
 							$("#websiteList")
 									.append(
-											"<li data-icon=\"false\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$_cu76f.$t+"')\">"
-													+ parseWeb(data.feed.entry[idNum].gsx$_cu76f.$t)
+											"<li data-icon=\"false\"><a onclick=\"load('"+lgsData.feed.entry[lgsId].gsx$offblog.$t+"')\">"
+													+ parseWeb(lgsData.feed.entry[lgsId].gsx$offblog.$t)
 													+ "</a></li>");
-							if (data.feed.entry[idNum].gsx$_cvlqs) {
+							if (lgsData.feed.entry[lgsId].gsx$_cu76f) {
 								$("#websiteList")
 										.append(
-												"<li data-icon=\"false\"><a onclick=\"load('"+data.feed.entry[idNum].gsx$_cvlqs.$t+"')\">"
-														+ parseWeb(data.feed.entry[idNum].gsx$_cvlqs.$t)
+												"<li data-icon=\"false\"><a onclick=\"load('"+lgsData.feed.entry[lgsId].gsx$_cu76f.$t+"')\">"
+														+ parseWeb(lgsData.feed.entry[lgsId].gsx$_cu76f.$t)
 														+ "</a></li>");
+								if (lgsData.feed.entry[lgsId].gsx$_cvlqs) {
+									$("#websiteList")
+											.append(
+													"<li data-icon=\"false\"><a onclick=\"load('"+lgsData.feed.entry[lgsId].gsx$_cvlqs.$t+"')\">"
+															+ parseWeb(lgsData.feed.entry[lgsId].gsx$_cvlqs.$t)
+															+ "</a></li>");
+								}
 							}
+							websiteFlag = true;
 						}
-						websiteFlag = true;
+						if (!websiteFlag) {
+							$("#websiteList").append(
+									"<li data-icon=\"false\">目前沒有個人網站資料!</li>");
+						}
+						$("#websiteList").listview("refresh");
+						initWebFlag = true;
 					}
-					if (!websiteFlag) {
-						$("#websiteList").append(
-								"<li data-icon=\"false\">目前沒有個人網站資料!</li>");
+					</script>
+				</div>
+				<div id="phone" data-role="popup">
+					<ul id="phoneNumList" data-role="listview" data-inset="true">
+						<li data-role="list-divider">打電話</li>
+					</ul>
+					<script type="text/javascript">
+					function initPhoneDiv(){
+						var phoneFlag = false;
+						if (lgsData.feed.entry[lgsId].gsx$offtel) {
+							$("#phoneNumList")
+									.append(
+											"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$offtel.$t+"\">國會研究室</a></li>");
+							if (lgsData.feed.entry[lgsId].gsx$_d6ua4) {
+								$("#phoneNumList")
+										.append(
+												"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_d6ua4.$t+"\">國會研究室二</a></li>");
+							}
+							phoneFlag = true;
+						}
+						if (lgsData.feed.entry[lgsId].gsx$_dgo93) {
+							$("#phoneNumList")
+									.append(
+											"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_dgo93.$t+"\">"
+													+ lgsData.feed.entry[lgsId].gsx$_dnp34.$t
+													+ lgsData.feed.entry[lgsId].gsx$_dp3nl.$t
+													+ "服務處</a></li>");
+							if (lgsData.feed.entry[lgsId].gsx$_di2tg) {
+								$("#phoneNumList")
+										.append(
+												"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_di2tg.$t+"\">"
+														+ lgsData.feed.entry[lgsId].gsx$_dnp34.$t
+														+ lgsData.feed.entry[lgsId].gsx$_dp3nl.$t
+														+ "服務處二</a></li>");
+							}
+							phoneFlag = true;
+						}
+						if (lgsData.feed.entry[lgsId].gsx$_dqi9q) {
+							$("#phoneNumList")
+									.append(
+											"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_dqi9q.$t+"\">"
+													+ lgsData.feed.entry[lgsId].gsx$_dxj3v.$t
+													+ lgsData.feed.entry[lgsId].gsx$_dyxo8.$t
+													+ "服務處</a></li>");
+							if (lgsData.feed.entry[lgsId].gsx$_drwu7) {
+								$("#phoneNumList")
+										.append(
+												"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_drwu7.$t+"\">"
+														+ lgsData.feed.entry[lgsId].gsx$_dxj3v.$t
+														+ lgsData.feed.entry[lgsId].gsx$_dyxo8.$t
+														+ "服務處二</a></li>");
+							}
+							phoneFlag = true;
+						}
+						if (lgsData.feed.entry[lgsId].gsx$_ebks1) {
+							$("#phoneNumList")
+									.append(
+											"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_ebks1.$t+"\">"
+													+ lgsData.feed.entry[lgsId].gsx$_e7d2q.$t
+													+ lgsData.feed.entry[lgsId].gsx$_e8rn7.$t
+													+ "服務處</a></li>");
+							if (lgsData.feed.entry[lgsId].gsx$_e1qt2) {
+								$("#phoneNumList")
+										.append(
+												"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_e1qt2.$t+"\">"
+														+ lgsData.feed.entry[lgsId].gsx$_e7d2q.$t
+														+ lgsData.feed.entry[lgsId].gsx$_e8rn7.$t
+														+ "服務處二</a></li>");
+							}
+							phoneFlag = true;
+						}
+						if (lgsData.feed.entry[lgsId].gsx$_eleqw) {
+							$("#phoneNumList")
+									.append(
+											"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_eleqw.$t+"\">"
+													+ lgsData.feed.entry[lgsId].gsx$_e5yid.$t
+													+ lgsData.feed.entry[lgsId].gsx$_eilm2.$t
+													+ "服務處</a></li>");
+							if (lgsData.feed.entry[lgsId].gsx$_emtbd) {
+								$("#phoneNumList")
+										.append(
+												"<li data-icon=\"false\"><a href=\"tel:"+lgsData.feed.entry[lgsId].gsx$_emtbd.$t+"\">"
+														+ lgsData.feed.entry[lgsId].gsx$_e5yid.$t
+														+ lgsData.feed.entry[lgsId].gsx$_eilm2.$t
+														+ "服務處二</a></li>");
+							}
+							phoneFlag = true;
+						}
+						if (!phoneFlag) {
+							$("#phoneNumList").append("<li>目前沒有電話資料!</li>");
+						}
+						$("#phoneNumList").listview("refresh");
+						initPhoneFlag = true;
 					}
-				</script>
-			</div>
-			<div id="phone" data-role="popup">
-				<ul id="phoneNumList" data-role="listview" data-inset="true">
-					<li data-role="list-divider">打電話</li>
-				</ul>
+					</script>
+					<script type="text/javascript">
+	  				/*
+	  				* Initialize the layout to fit the divice otientation
+	  				*/
+	  				function initLayout(){
+	  					setTimeout(function (){
+		  					var divH, divW;
+							if(window.orientation == 90 || window.orientation == -90){//水平
+		  	  					document.getElementById("vertical").style.width = "50%";
+		  	  					document.getElementById("profile").style.height = $(window).width()/16*5-10+"px";
+		  	  					document.getElementById('horizontal').style.width = "50%";
+								document.getElementById('horizontal').appendChild(document.getElementById('infoPost'));
+								divH = $(window).width()/16*5-10;
+								divW = $(window).width()/4;
+							} else {
+		  	  					document.getElementById("vertical").style.width = "100%";
+								document.getElementById("profile").style.height = "33%";
+								divH = $(window).height()/3;
+								divW = $(window).width()/2;
+							}
+							//調整字體大小
+							var fontsize;
+							if(divH/18 > divW/14){
+								fontsize = divW/14;
+							} else {
+								fontsize = divH/18;
+							}
+							//alert(divH+", "+divW+", "+fontsize);
+							$(".myfont").attr("style", "font-size:"+fontsize+"px; margin:"+fontsize/2+"px");
+							$(".list").attr("style", "padding: "+fontsize/4+"px");
+	  					}, 300);
+	  				}
+	  				// Listen for orientation changes
+	  				$( window ).on( "orientationchange", function(event) {
+	  					setTimeout(function (){
+	  						var divH, divW;
+	  	  					if(window.orientation == 0 || window.orientation == 180){
+	  	  	  					document.getElementById("vertical").style.width = "100%";
+	  							document.getElementById("profile").style.height = "33%";
+	  							document.getElementById('vertical').appendChild(document.getElementById('infoPost'));
+	  							$("#infoPost").height($(window).height()*0.66-$("#navbar").height()-10-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+	  							$("#infoPost").getNiceScroll().resize();
+	  							divH = $(window).height()/3;
+	  							divW = $(window).width()/2;
+	  						} else {
+	  	  	  					document.getElementById("vertical").style.width = "50%";
+	  	  	  					document.getElementById("profile").style.height = $(window).width()/16*5-10+"px";
+	  	  	  					document.getElementById('horizontal').style.width = "50%";
+	  							document.getElementById('horizontal').appendChild(document.getElementById('infoPost'));
+	  							$("#infoPost").height($(window).height()-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+	  							$("#infoPost").getNiceScroll().resize();
+	  							divH = $(window).width()/16*5-10;
+	  							divW = $(window).width()/4;
+	  						}
+	  						//調整字體大小
+	  						var fontsize;
+	  						if(divH/18 > divW/14){
+	  							fontsize = divW/14;
+	  						} else {
+	  							fontsize = divH/18;
+	  						}
+	  						//alert(divH+", "+divW+", "+fontsize);
+	  						$(".myfont").attr("style", "font-size:"+fontsize+"px; margin:"+fontsize/2+"px");
+	  						$(".list").attr("style", "padding: "+fontsize/4+"px");
+	  					},300);//Android系統詭異的需要delay才能更新成正確的長寬
+	  				});
+					//加上scroll
+					$(document).ready(
+						function() {
+							if($(window).width()>$(window).height()){
+								$("#infoPost").height($(window).height()-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+							} else {
+								$("#infoPost").height($(window).height()*0.66-$("#navbar").height()-10-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+							}
+							$("#infoPost").niceScroll({cursorcolor:"#222222"});
+						});
+					</script>
+				</div>
+				<div id="partyDiv" data-role="popup" style='padding: 10px;'>
+				</div>
 				<script type="text/javascript">
-					VARneFlag = false;
-					if (data.feed.entry[idNum].gsx$offtel) {
-						$("#phoneNumList")
-								.append(
-										"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$offtel.$t+"\">國會研究室</a></li>");
-						if (data.feed.entry[idNum].gsx$_d6ua4) {
-							$("#phoneNumList")
-									.append(
-											"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_d6ua4.$t+"\">國會研究室二</a></li>");
-						}
-						phoneFlag = true;
-					}
-					if (data.feed.entry[idNum].gsx$_dgo93) {
-						$("#phoneNumList")
-								.append(
-										"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_dgo93.$t+"\">"
-												+ data.feed.entry[idNum].gsx$_dnp34.$t
-												+ data.feed.entry[idNum].gsx$_dp3nl.$t
-												+ "服務處</a></li>");
-						if (data.feed.entry[idNum].gsx$_di2tg) {
-							$("#phoneNumList")
-									.append(
-											"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_di2tg.$t+"\">"
-													+ data.feed.entry[idNum].gsx$_dnp34.$t
-													+ data.feed.entry[idNum].gsx$_dp3nl.$t
-													+ "服務處二</a></li>");
-						}
-						phoneFlag = true;
-					}
-					if (data.feed.entry[idNum].gsx$_dqi9q) {
-						$("#phoneNumList")
-								.append(
-										"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_dqi9q.$t+"\">"
-												+ data.feed.entry[idNum].gsx$_dxj3v.$t
-												+ data.feed.entry[idNum].gsx$_dyxo8.$t
-												+ "服務處</a></li>");
-						if (data.feed.entry[idNum].gsx$_drwu7) {
-							$("#phoneNumList")
-									.append(
-											"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_drwu7.$t+"\">"
-													+ data.feed.entry[idNum].gsx$_dxj3v.$t
-													+ data.feed.entry[idNum].gsx$_dyxo8.$t
-													+ "服務處二</a></li>");
-						}
-						phoneFlag = true;
-					}
-					if (data.feed.entry[idNum].gsx$_ebks1) {
-						$("#phoneNumList")
-								.append(
-										"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_ebks1.$t+"\">"
-												+ data.feed.entry[idNum].gsx$_e7d2q.$t
-												+ data.feed.entry[idNum].gsx$_e8rn7.$t
-												+ "服務處</a></li>");
-						if (data.feed.entry[idNum].gsx$_e1qt2) {
-							$("#phoneNumList")
-									.append(
-											"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_e1qt2.$t+"\">"
-													+ data.feed.entry[idNum].gsx$_e7d2q.$t
-													+ data.feed.entry[idNum].gsx$_e8rn7.$t
-													+ "服務處二</a></li>");
-						}
-						phoneFlag = true;
-					}
-					if (data.feed.entry[idNum].gsx$_eleqw) {
-						$("#phoneNumList")
-								.append(
-										"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_eleqw.$t+"\">"
-												+ data.feed.entry[idNum].gsx$_e5yid.$t
-												+ data.feed.entry[idNum].gsx$_eilm2.$t
-												+ "服務處</a></li>");
-						if (data.feed.entry[idNum].gsx$_emtbd) {
-							$("#phoneNumList")
-									.append(
-											"<li data-icon=\"false\"><a href=\"tel:"+data.feed.entry[idNum].gsx$_emtbd.$t+"\">"
-													+ data.feed.entry[idNum].gsx$_e5yid.$t
-													+ data.feed.entry[idNum].gsx$_eilm2.$t
-													+ "服務處二</a></li>");
-						}
-						phoneFlag = true;
-					}
-					if (!phoneFlag) {
-						$("#phoneNumList").append("<li>目前沒有電話資料!</li>");
-					}
-				</script>
-				<script type="text/javascript">
-  				/*
-  				* Initialize the layout to fit the divice otientation
-  				*/
-  				function initLayout(){
-  					var divH, divW;
-					if($(window).width()>$(window).height()){//水平
-  	  					document.getElementById("vertical").style.width = "50%";
-  	  					document.getElementById("profile").style.height = $(window).width()/16*5-10+"px";
-  	  					document.getElementById('horizontal').style.width = "50%";
-						document.getElementById('horizontal').appendChild(document.getElementById('infoPost'));
-						divH = $(window).width()/16*5-10;
-						divW = $(window).width()/4;
+				//init partyDiv popup
+				var partyName;
+				var partyMember;
+				function initPartyDiv(){
+					var partyIndex;
+					if(!window.localStorage["partyName"]){
+						//search 這位委員黨籍的所有委員
+						//alert("沒有任何政黨資料");
+						partyName = new Array();
+						partyMember = new Array();
+						searchParty(lgsData.feed.entry[lgsId].gsx$party.$t);
+						partyIndex = 0;
 					} else {
-  	  					document.getElementById("vertical").style.width = "100%";
-						document.getElementById("profile").style.height = "33%";
-						divH = $(window).height()/3;
-						divW = $(window).width()/2;
-					}
-					//調整字體大小
-					var fontsize;
-					if(divH/18 > divW/14){
-						fontsize = divW/14;
-					} else {
-						fontsize = divH/18;
-					}
-					//alert(divH+", "+divW+", "+fontsize);
-					$(".myfont").attr("style", "font-size:"+fontsize+"px; margin:"+fontsize/2+"px");
-					$(".list").attr("style", "padding: "+fontsize/4+"px");
-  				}
-  				// Listen for orientation changes
-  				$( window ).on( "orientationchange", function(event) {
-  					setTimeout(function (){
-  						var divH, divW;
-  	  					if(window.orientation == 0 || window.orientation == 180){
-  	  	  					document.getElementById("vertical").style.width = "100%";
-  							document.getElementById("profile").style.height = "33%";
-  							document.getElementById('vertical').appendChild(document.getElementById('infoPost'));
-  							$("#infoPost").height($(window).height()*0.66-$("#navbar").height()-10-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
-  							$("#infoPost").getNiceScroll().resize();
-  							divH = $(window).height()/3;
-  							divW = $(window).width()/2;
-  						} else {
-  	  	  					document.getElementById("vertical").style.width = "50%";
-  	  	  					document.getElementById("profile").style.height = $(window).width()/16*5-10+"px";
-  	  	  					document.getElementById('horizontal').style.width = "50%";
-  							document.getElementById('horizontal').appendChild(document.getElementById('infoPost'));
-  							$("#infoPost").height($(window).height()-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
-  							$("#infoPost").getNiceScroll().resize();
-  							divH = $(window).width()/16*5-10;
-  							divW = $(window).width()/4;
-  						}
-  						//調整字體大小
-  						var fontsize;
-  						if(divH/18 > divW/14){
-  							fontsize = divW/14;
-  						} else {
-  							fontsize = divH/18;
-  						}
-  						//alert(divH+", "+divW+", "+fontsize);
-  						$(".myfont").attr("style", "font-size:"+fontsize+"px; margin:"+fontsize/2+"px");
-  						$(".list").attr("style", "padding: "+fontsize/4+"px");
-  					},250);//Android系統詭異的需要delay才能更新成正確的長寬
-  				});
-				//加上scroll
-				$(document).ready(
-					function() {
-						if($(window).width()>$(window).height()){
-							$("#infoPost").height($(window).height()-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
-						} else {
-							$("#infoPost").height($(window).height()*0.66-$("#navbar").height()-10-$("#header").outerHeight(true)-parseInt($(".ui-content").css("padding-left"))*2);
+						partyName = JSON.parse(window.localStorage["partyName"]);
+						partyMember = JSON.parse(window.localStorage["partyMember"]);
+						partyIndex = jQuery.inArray(lgsData.feed.entry[lgsId].gsx$party.$t,partyName);
+						if(partyIndex<0){
+							//search 這位委員黨籍的所有委員
+							// alert("沒有該委員的政黨資料");
+							searchParty(lgsData.feed.entry[lgsId].gsx$party.$t);
+							partyIndex = partyName.length-1;
 						}
-						$("#infoPost").niceScroll({cursorcolor:"#222222"});
+					}
+					var member = "";
+					for(var j=0; j<partyMember[partyIndex].length; j++){
+						member += "<a href='profile.html' rel='external' id='"+partyMember[partyIndex][j]
+						+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c lgs' style='padding:0.2em 0.4em;'>"
+						+partyMember[partyIndex][j]+"</a>";
+					} 
+					$("#partyDiv").append("<h4>所有"+partyName[partyIndex]
+									+"的委員: </h4><p>"+member+"</p>");
+					$(".lgs").click(function (){
+						window.localStorage["name"]=$(this).attr("id");
 					});
+					initPartyFlag = true;	
+				}
+				function searchParty(party){
+					var member = new Array();
+					partyName.push(party);
+					for(var i=3; i<lgsData.feed.entry.length; i=i+1){
+						if(lgsData.feed.entry[i].gsx$party.$t == party){
+							member.push(lgsData.feed.entry[i].gsx$name.$t);
+						}
+					}
+					partyMember.push(member);
+					window.localStorage["partyName"] = JSON.stringify(partyName);
+					window.localStorage["partyMember"] = JSON.stringify(partyMember);
+				}
+				</script>
+				<div id="sessionDiv" data-role="popup" style='padding: 10px;'>
+					<p>
+					中華民國立法院第八屆委員在民國101年（2012年）1月14日選出，
+					任期自民國101年2月1日至民國105年（2016年）1月31日止。
+					本屆立法院之席次總計113席，包括區域立法委員73席、原住民立法委員6席、全國不分區立法委員33席、以及僑居國外國民立法委員1席。
+					</p>
+				</div>
+				<div id="cirDiv" data-role="popup" style='padding: 10px;'>
+				</div>
+				<script type="text/javascript">
+				var cirJsonText = '{"台北市, 第1選區":"包含臺北市北投區、士林區的天母里、三玉里、天福里、天祿里、天壽里、天山里、天和里、天玉里、德行里、德華里、忠誠里、蘭雅里、蘭興里共13個里。",'
+					  +'"台北市, 第2選區":"包含臺北市大同區、士林區－仁勇里、義信里、福林里、福德里、福志里、舊佳里、福佳里、後港里、福中里、前港里、百齡里、承德里、福華里、明勝里、福順里、富光里、葫蘆里、葫東里、社子里、社新里、社園里、永倫里、福安里、富洲里、岩山里、名山里、聖山里、芝山里、東山里、永福里、公館里、新安里、陽明里、菁山里、平等里、溪山里、翠山里、臨溪里等38里。",'
+					  +'"台北市, 第3選區":"包含台北市中山區、 松山區－精忠里、東光里、龍田里、東昌里、東勢里、中華里、民有里、民福里、松基里、莊敬里、東榮里、新益里、新東里、介壽里、三民里、富錦里、富泰里、自強里、鵬程里、安平里等20里。",'
+					  +'"台北市, 第4選區":"包含台北市內湖區、南港區。",'
+					  +'"台北市, 第5選區":"包含台北市萬華區、中正區－南門里、新營里、龍福里、南福里、愛國里、廈安里、忠勤里、永功里、永昌里、龍興里、龍光里、黎明里、光復里、建國里、東門里、幸福里、梅花里、幸市里、文北里、文祥里、三愛里等21里。",'
+					  +'"台北市, 第6選區":"包含台北市大安區。",'
+					  +'"台北市, 第7選區":"包含台北市信義區、松山區－慈祐里、吉祥里、新聚里、復盛里、中正里、中崙里、美仁里、吉仁里、敦化里、復源里、復建里、復勢里、福成里等13里。",'
+					  +'"台北市, 第8選區":"包含台北市文山區、中正區－水源里、富水里、文盛里、林興里、河堤里、螢圃里、網溪里、板溪里、頂東里、螢雪里等 10 里。",'
+					  +'"新北市, 第1選區":"包含新北市石門區、三芝區、淡水區、八里區、林口區、泰山區。",'
+					  +'"新北市, 第2選區":"包含新北市五股區、蘆洲區、三重區－富貴里、碧華里、仁華里、永清里、永順里、富福里、慈化里、慈惠里、慈愛里、永福里、慈生里、慈福里、慈祐里、富華里、五華里、五福里等16 里。",'
+					  +'"新北市, 第3選區":"包含新北市三重區－二重里、三民里、三安里、大同里、大安里、大有里、大園里、大德里、中山里、中央里、中正里、中民里、中興里、五谷里、五常里、五順里、仁忠里、仁義里、仁德里、介壽里、六合里、六福里、文化里、平和里、正安里、正義里、正德里、民生里、永吉里、永安里、永春里、永盛里、永發里、永德里、永興里、永豐里、永煇里、田中里、田心里、田安里、立德里、光正里、光田里、光明里、光華里、光陽里、光榮里、光輝里、吉利里、同安里、同慶里、安慶里、成功里、自強里、秀江里、谷王里、尚德里、幸福里、忠孝里、承德里、長元里、長生里、長安里、長江里、長泰里、長福里、信安里、厚德里、奕壽里、重明里、重陽里、重新里、國隆里、培德里、崇德里、清和里、頂崁里、博愛里、菜寮里、開元里、順德里、溪美里、瑞德里、萬壽里、過田里、福民里、福田里、福安里、福利里、福星里、福祉里、福隆里、福德里、福樂里、維德里、德厚里、錦田里、錦安里、錦江里、錦通里、龍門里、龍濱里、雙園里等 103 里。",'
+					  +'"新北市, 第4選區":"包含新北市新莊區－中平里、中全里、中宏里、中和里、中信里、中美里、中原里、中泰里、中港里、中華里、中隆里、中誠里、丹鳳里、仁愛里、仁義里、化成里、文明里、文聖里、文德里、文衡里、民全里、立人里、立功里、立廷里、立志里、立言里、立泰里、立基里、立德里、昌明里、全安里、全泰里、合鳳里、自立里、自信里、自強里、和平里、幸福里、忠孝里、昌平里、昌信里、昌隆里、信義里、建安里、建福里、後港里、後德里、思源里、思賢里、恆安里、泰豐里、海山里、國泰里、祥鳳里、富民里、富國里、萬安里、裕民里、榮和里、福基里、福興里、福營里、興漢里、頭前里、龍安里、龍福里、龍鳳里、營盤里、豐年里、雙鳳里、瓊林里、四維里、成德里、八德里、南港里等 75 里。",'
+					  +'"新北市, 第5選區":"包含新北市樹林區、鶯歌區、新莊區－民安里、民有里、民本里、光明里、光正里、光榮里、光和里、光華里、西盛里等 9 里。",'
+					  +'"新北市, 第6選區":"包含新北市板橋區－中正里、仁翠里、介壽里、公舘里、文化里、文聖里、文翠里、文德里、民安里、民權里、永安里、光華里、光榮里、吉翠里、江翠里、百壽里、自立里、自強里、宏翠里、赤松里、幸福里、忠誠里、忠翠里、明翠里、松柏里、松翠里、社後里、金華里、青翠里、建國里、柏翠里、流芳里、香社里、香雅里、留侯里、純翠里、國光里、埤墘里、莒光里、莊敬里、嵐翠里、朝陽里、港尾里、港嘴里、港德里、華江里、華翠里、陽明里、黃石里、新民里、新生里、新埔里、新海里、新翠里、新興里、漢生里、滿翠里、福翠里、德翠里、龍翠里、聯翠里、懷翠里、挹秀里、湳興里、溪頭里等 65 里。",'
+					  +'"新北市, 第7選區":"包含新北市板橋區－九如里、大安里、大豐里、大觀里、中山里、五權里、仁愛里、正泰里、民生里、民族里、玉光里、光仁里、光復里、成和里、西安里、和平里、居仁里、東丘里、東安里、長安里、長壽里、信義里、後埔里、重慶里、香丘里、埔墘里、振興里、振義里、海山里、浮洲里、國泰里、堂春里、崑崙里、深丘里、富貴里、復興里、景星里、華中里、華東里、華貴里、華福里、華德里、華興里、鄉雲里、溪北里、溪洲里、溪福里、僑中里、福丘里、福安里、福星里、福祿里、福壽里、福德里、聚安里、廣新里、廣福里、廣德里、龍安里、雙玉里、歡園里等 61 里。",'
+					  +'"新北市, 第8選區":"包含新北市中和區－力行里、中山里、中正里、中原里、中興里、仁和里、內南里、文元里、外南里、平河里、正行里、正南里、民生里、民安里、民有里、民享里、瓦磘里、吉興里、安穗里、灰磘里、自強里、佳和里、和興里、忠孝里、明德里、明穗里、枋寮里、東南里、信和里、冠穗里、南山里、建和里、員山里、員富里、國光里、國華里、崇南里、清穗里、連和里、連城里、頂南里、復興里、景文里、景平里、景本里、景安里、景南里、景新里、景福里、華南里、華新里、新南里、瑞穗里、嘉新里、嘉慶里、嘉穗里、壽南里、壽德里、漳和里、碧河里、福和里、福南里、福美里、福真里、福祥里、福善里、廟美里、德行里、德穗里、橫路里、積穗里、興南里、錦中里、錦和里、錦昌里、錦盛里等76 里。",'
+					  +'"新北市, 第9選區":"包含新北市永和區、中和區－泰安里、安平里、中安里、安樂里、宜安里、安順里、安和里、秀明里、秀仁里、秀山里、秀福里、秀義里、秀景里、秀水里、秀士里、秀成里、秀峰里等 17 里。",'
+					  +'"新北市, 第10選區":"包含新北市土城區、三峽區。",'
+					  +'"新北市, 第11選區":"包含新北市新店區、深坑區、石碇區、坪林區、烏來區。",'
+					  +'"新北市, 第12選區":"包含新北市金山區、萬里區、汐止區、平溪區、瑞芳區、雙溪區、貢寮區。",'
+					  +'"台中市, 第1選區":"包含台中市大甲區、大安區、外埔區、清水區、梧棲區。",'
+					  +'"台中市, 第2選區":"包含台中市沙鹿區、龍井區、大肚區、烏日區、霧峰區、大里區－東湖里、西湖里等 2 里。",'
+					  +'"台中市, 第3選區":"包含台中市后里區、神岡區、大雅區、潭子區。",'
+					  +'"台中市, 第4選區":"包含台中市西屯區、南屯區。",'
+					  +'"台中市, 第5選區":"包含台中市北區、北屯區。",'
+					  +'"台中市, 第6選區":"包含台中市中區、西區、東區、南區。",'
+					  +'"台中市, 第7選區":"包含台中市太平區、 大里區－大里里、新里里、國光里、樹王里、大元里、夏田里、祥興里、東興里、大明里、永隆里、日新里、西榮里、長榮里、內新里、中新里、立仁里、立德里、新仁里、東昇里、仁化里、仁德里、健民里、塗城里、金城里、瑞城里等 25 里。",'
+					  +'"台中市, 第8選區":"包含台中市豐原區、石岡區、新社區、東勢區、和平區。",'
+					  +'"台南市, 第1選區":"包含台南市後壁區、白河區、北門區、學甲區、鹽水區、新營區、柳營區、東山區、將軍區、下營區、六甲區、官田區。",'
+					  +'"台南市, 第2選區":"包含台南市七股區、佳里區、麻豆區、善化區、大內區、玉井區、楠西區、西港區、安定區、新市區、山上區、新化區、左鎮區、南化區。",'
+					  +'"台南市, 第3選區":"包含台南市安南區、北區、中西區。",'
+					  +'"台南市, 第4選區":"包含台南市安平區、南區、東區。",'
+					  +'"台南市, 第5選區":"包含台南市永康區、仁德區、歸仁區、關廟區、龍崎區。",'
+					  +'"高雄市, 第1選區":"包含高雄市桃源區、那瑪夏區、甲仙區、六龜區、杉林區、內門區、旗山區、美濃區、茂林區、阿蓮區、田寮區、燕巢區、大社區、大樹區。",'
+					  +'"高雄市, 第2選區":"包含高雄市茄萣區、湖內區、路竹區、永安區、岡山區、彌陀區、梓官區、橋頭區。",'
+					  +'"高雄市, 第3選區":"包含高雄市楠梓區、左營區。",'
+					  +'"高雄市, 第4選區":"包含高雄市仁武區、鳥松區、大寮區、林園區。",'
+					  +'"高雄市, 第5選區":"包含高雄市鼓山區、鹽埕區、旗津區、三民區－川東里、德西里、裕民里、力行里、豐裕里、千秋里、千北里、立德里、千歲里、鳳南里、興德里、鳳北里、德北里、十全里、十美里、安邦里、安宜里、安泰里、民享里、精華里、德行里、德東里、立誠里、立業里、安生里、安和里、安東里、達明里、達德里、達仁里、達勇里、德智里、德仁里、同德里、建東里、港西里、長明里、港東里、港新里、博愛里、博惠里等 41 里。",'
+					  +'"高雄市, 第6選區":"包含高雄市三民區—鼎金里、鼎盛里、鼎強里、鼎力里、鼎西里、鼎中里、鼎泰里、本館里、本和里、本文里、本武里、本元里、本安里、本上里、本揚里、寶獅里、寶德里、寶泰里、寶興里、寶中里、寶華里、寶國里、寶民里、寶慶里、寶業里、寶盛里、寶安里、寶龍里、寶珠里、寶玉里、灣子里、灣愛里、灣中里、灣華里、灣勝里、灣利里、灣復里、正興里、正順里、灣興里、灣成里、安康里、安寧里、安吉里、安發里等 45 里。",'
+					  +'"高雄市, 第7選區":"包含高雄市前金區、新興區、苓雅區、前鎮區復國里等8里。",'
+					  +'"高雄市, 第8選區":"包含高雄市鳳山區。",'
+					  +'"高雄市, 第9選區":"包含高雄市小港區、前鎮區草衙里等51里。",'
+					  +'"基隆市":"包含基隆市全境。",'
+					  +'"宜蘭縣":"包含宜蘭縣全境。",'
+					  +'"桃園縣, 第1選區":"包含桃園縣蘆竹鄉、龜山鄉、桃園市汴洲里等11里。",'
+					  +'"桃園縣, 第2選區":"包含桃園縣大園鄉、觀音鄉、新屋鄉、楊梅市。",'
+					  +'"桃園縣, 第3選區":"包含桃園縣中壢市－石頭里、青埔里、華愛里、龍昌里、三民里、光明里、信義里、新明里、龍東里、山東里、仁義里、成功里、後寮里、新街里、龍德里、仁福里、自立里、洽溪里、新興里、龍興里、中央里、自治里、振興里、過嶺里、舊明里、內定里、健行里、福德里、中建里、內厝里、至善里、莊敬里、德義里、中原里、內壢里、和平里、復華里、文化里、幸福里、復興里、中榮里、月眉里、忠孝里、普仁里、興和里、中壢里、水尾里、忠義里、普忠里、興南里、五福里、正義里、忠福里、普強里、興國里、五權里、永光里、明德里、普義里、龍平里、永福里、東興里、普慶里、仁美里、永興里、芝芭里、龍岡里、中興里、興平里、龍慈里、自信里、林森里、金華里等 73 里。",'
+					  +'"桃園縣, 第4選區":"包含桃園縣桃園市－中路里、同安里、福安里、中寧里、成功里、信光里、福林里、中德里、自強里、南門里、龍山里、大林里、中興里、西門里、南埔里、龍安里、文中里、西埔里、南華里、龍岡里、大豐里、文化里、西湖里、建國里、龍祥里、中山里、文昌里、龍鳳里、中平里、文明里、泰山里、豐林里、中正里、北門里、東山里、莊敬里、中成里、北埔里、東門里、朝陽里、寶慶里、中和里、民生里、東埔里、雲林里、中信里、永安里、武陵里、慈文里、中原里、永興里、長安里、新埔里、中埔里、玉山里、長美里、中泰里、光興里、長德里、同德里、明德里、瑞慶里、寶安里、中聖里、龍壽里等 65 里。",'
+					  +'"桃園縣, 第5選區":"包含桃園縣平鎮市、龍潭鄉。",'
+					  +'"桃園縣, 第6選區":"包含桃園縣八德市、大溪鎮、復興鄉、中壢市－興仁里、自強里、中正里、中山里、篤行里、仁愛里、仁和里、仁祥里、華勛里、仁德里、中堅里、龍安里、等 12 里。",'
+					  +'"新竹縣":"包含新竹縣全境。",'
+					  +'"新竹市":"包含新竹市全境。",'
+					  +'"苗栗縣, 第1選區":"包含苗栗縣竹南鎮、造橋鄉、後龍鎮、西湖鄉、通霄鎮、銅鑼鄉、苑裡鎮、三義鄉。",'
+					  +'"苗栗縣, 第2選區":"包含苗栗縣頭份鎮、三灣鄉、南庄鄉、苗栗市、頭屋鄉、獅潭鄉、公館鄉、大湖鄉、泰安鄉、卓蘭鎮。",'
+					  +'"彰化縣, 第1選區":"包含彰化縣伸港鄉、線西鄉、和美鎮、鹿港鎮、福興鄉、秀水鄉。",'
+					  +'"彰化縣, 第2選區":"包含彰化縣彰化市、花壇鄉、芬園鄉。",'
+					  +'"彰化縣, 第3選區":"包含彰化縣芳苑鄉、二林鎮、埔鹽鄉、溪湖鎮、埔心鄉、大城鄉、竹塘鄉、埤頭鄉、北斗鎮、溪州鄉。",'
+					  +'"彰化縣, 第4選區":"包含彰化縣大村鄉、員林鎮、永靖鄉、社頭鄉、田尾鄉、田中鎮、二水鄉。",'
+					  +'"南投縣, 第1選區":"包含南投縣草屯鎮、國姓鄉、埔里鎮、仁愛鄉、中寮鄉、魚池鄉。",'
+					  +'"南投縣, 第2選區":"包含南投縣南投市、名間鄉、集集鎮、竹山鎮、鹿谷鄉、水里鄉、信義鄉。",'
+					  +'"雲林縣, 第1選區":"包含雲林縣麥寮鄉、臺西鄉、東勢鄉、褒忠鄉、土庫鎮、虎尾鎮、四湖鄉、元長鄉、口湖鄉、水林鄉、北港鎮。",'
+					  +'"雲林縣, 第2選區":"包含雲林縣崙背鄉、二崙鄉、西螺鎮、莿桐鄉、林內鄉、斗六市、大埤鄉、斗南鎮、古坑鄉。",'
+					  +'"嘉義縣, 第1選區":"包含嘉義縣六腳鄉、東石鄉、朴子市、太保市、布袋鎮、義竹鄉、鹿草鄉、水上鄉。",'
+					  +'"嘉義縣, 第2選區":"包含嘉義縣溪口鄉、大林鎮、梅山鄉、新港鄉、民雄鄉、竹崎鄉、中埔鄉、番路鄉、阿里山鄉、大埔鄉。",'
+					  +'"嘉義市":"包含嘉義市全境。",'
+					  +'"屏東縣, 第1選區":"包含屏東縣里港鄉、高樹鄉、三地門鄉、霧臺鄉、九如鄉、鹽埔鄉、長治鄉、內埔鄉、瑪家鄉、泰武鄉、竹田鄉、萬巒鄉、潮州鎮。",'
+					  +'"屏東縣, 第2選區":"包含屏東縣屏東市、麟洛鄉、萬丹鄉。",'
+					  +'"屏東縣, 第3選區":"包含屏東縣新園鄉、崁頂鄉、南州鄉、新埤鄉、來義鄉、東港鎮、林邊鄉、佳冬鄉、枋寮鄉、春日鄉、枋山鄉、獅子鄉、牡丹鄉、車城鄉、滿州鄉、恆春鎮、琉球鄉。",'
+					  +'"台東縣":"包含台東縣全境。",'
+					  +'"花蓮縣":"包含花蓮縣全境。",'
+					  +'"澎湖縣":"包含澎湖縣全境。",'
+					  +'"金門縣":"包含金門縣全境。",'
+					  +'"連江縣":"包含連江縣全境。",'
+					  +'"全國不分區":"全國不分區立法委員共三十三人，與僑居國外國民立法委員共三十四人，依政黨名單投票選舉之，由獲得百分之五以上政黨選舉票之政黨依得票率選出之，各政黨當選名單中，婦女不得低於二分之一。",'
+					  +'"全國不分區(僑選)":"僑居國外國民立法委員一人，與全國不分區立法委員共三十四人，依政黨名單投票選舉之，由獲得百分之五以上政黨選舉票之政黨依得票率選出之，各政黨當選名單中，婦女不得低於二分之一。",'
+					  +'"原住民, 山地原住民":"自由地區山地原住民",'
+					  +'"原住民, 平地原住民":"自由地區平地原住民"'
+					  +'}';
+					var cir = JSON.parse(cirJsonText);
+					$("#cirDiv").append("<h4>"+cirText+"</h4><p>"+cir[cirText]+"</p>");
+				</script>
+				<div id="commDiv" data-role="popup" style='padding: 10px;'>
+				</div>
+				<script type="text/javascript">
+				//init commDiv popup
+				var commName;
+				var commMember;
+				function initCommDiv(){
+					var commIndex;
+					if(!window.localStorage["commName"]){
+						//search 這位委員委員會的所有委員
+						//alert("沒有任何委員會資料");
+						commName = new Array();
+						commMember = new Array();
+						searchComm(lgsData.feed.entry[lgsId].gsx$comm.$t);
+						commIndex = 0;
+					} else {
+						commName = JSON.parse(window.localStorage["commName"]);
+						commMember = JSON.parse(window.localStorage["commMember"]);
+						commIndex = jQuery.inArray(lgsData.feed.entry[lgsId].gsx$comm.$t,commName);
+						if(commIndex<0){
+							//search 這位委員委員會的所有委員
+							//alert("沒有該委員的委員會資料");
+							searchComm(lgsData.feed.entry[lgsId].gsx$comm.$t);
+							commIndex = commName.length-1;
+						}
+					}
+					var member = "";
+					for(var j=0; j<commMember[commIndex].length; j++){
+						member += "<a href='profile.html' rel='external' id='"+commMember[commIndex][j]
+						+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c lgs' style='padding:0.2em 0.4em;'>"
+						+commMember[commIndex][j]+"</a>";
+					} 
+					$("#commDiv").append("<h4>所有"+commName[commIndex]
+									+"的委員: </h4><p>"+member+"</p>");
+					$(".lgs").click(function (){
+						window.localStorage["name"]=$(this).attr("id");
+					});
+					initCommFlag = true;	
+				}
+				//search 這位委員委員會的所有委員
+				function searchComm(comm){
+					var member = new Array();
+					commName.push(comm);
+					for(var i=3; i<lgsData.feed.entry.length; i=i+1){
+						if(lgsData.feed.entry[i].gsx$comm.$t == comm){
+							member.push(lgsData.feed.entry[i].gsx$name.$t);
+						}
+					}
+					commMember.push(member);
+					window.localStorage["commName"] = JSON.stringify(commName);
+					window.localStorage["commMember"] = JSON.stringify(commMember);
+				}
 				</script>
 			</div>
 		</div>
-	</div>
-</body>
+	</body>
 </HTML>

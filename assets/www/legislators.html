@@ -4,23 +4,28 @@
 		<meta charset="UTF-8">
 		<title>LegislatorsList</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
+		<!-- cordova -->
 		<script src="cordova.js"></script>
+		<!-- jquery -->
 		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<!-- jquery mobile -->
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.css" />
 		<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
-		<script type="text/javascript">
-			var data;
-			var idNum;
-			function parse(json){
-				data = json;	
-			}
+		<!-- 立法委員資料 -->
+ 		<script type="text/javascript">
+			var lgsData = JSON.parse(window.localStorage["lgsData"]);
+			var nameListHtml = "";
+			var partyName = new Array();
+			var partyMember = new Array();
+/* 			function loadLgsData(json){
+				lgsData = json;	
+			} */
 		</script>
-		<script type='text/javascript' 
-		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=parse'></script>
-	 <script src="jquery.nicescroll.js"></script>
-	 </head> 
+<!--  		<script type='text/javascript' 
+		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdDY5d0Z6SjVRUTEyX1hDdGNtMEFYTEE/od6/public/values?alt=json-in-script&callback=loadLgsData'></script>
+ -->	 </head> 
 	 <body>
-		<!-- Home -->
+		<!-- legislatorPage -->
 		<div data-role="page" id="legislatorPage">
 			<div data-role="header">
 				<a href="index.html" data-icon="arrow-l" rel="external">Back</a>
@@ -28,24 +33,39 @@
 				<a href="index.html" data-icon="home">Home</a>
 			</div>
 			<div data-role="content">
-				<ul id="nameList" data-role="listview" data-filter="true">
-				</ul>
-
+   				<div data-tab="name">
+       				<ul id="nameList" data-role="listview" data-filter="true" data-filter-placeholder="請輸入委員姓名,黨籍,選區縣市或委員會">
+					</ul>
+   				</div>
 			</div>
 		</div>
-				<script type="text/javascript">
-					var a = data.feed.entry.length;
-					//alert(a);
-					for(var i=3; i<a; i=i+1){
-						$("#nameList").append("<li><a href='profile.html' id='id"+i+"' rel='external'>"+data.feed.entry[i].gsx$name.$t+"</a></li>");
-						$("#id"+i).click(function(){
-							idNum = parseInt($(this).attr("id").slice(2));
-							//alert(data.feed.entry[idNum].gsx$name.$t);
-							window.localStorage["name"]=data.feed.entry[idNum].gsx$name.$t;
-							//alert(idNum);
-						});
-					}
-				</script>
+ 		<script type="text/javascript">
+		//alert(window.localStorage["nameList"]);
+		//if(!window.localStorage["nameList"]){
+			//alert("page first visted");
+			for(var i=3; i<lgsData.feed.entry.length; i=i+1){
+				nameListHtml += "<li data-filtertext='"
+								+lgsData.feed.entry[i].gsx$party.$t+" "
+								+lgsData.feed.entry[i].gsx$cir.$t+" "
+								+lgsData.feed.entry[i].gsx$comm.$t+" "
+								+lgsData.feed.entry[i].gsx$name.$t
+								+"'><a href='profile.html' id='"
+								+lgsData.feed.entry[i].gsx$name.$t
+								+"' rel='external' class='lgsLink'>"
+								+lgsData.feed.entry[i].gsx$name.$t
+								+"</a></li>";
+			}
+			//window.localStorage["nameList"] = nameListHtml;
+		//}
+		$("#nameList").append(window.localStorage["nameListHtml"]);
+		$(".lgsLink").click(function(){
+			window.localStorage["name"] = $(this).attr("id");
+		});
+
+ 		//alert(window.localStorage["nameList"]);
+		</script>
+		<!-- end of legislatorPage -->
+		
 	</body>
 </HTML> 
 		 

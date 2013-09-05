@@ -35,7 +35,7 @@
 		</div>
 				<script type="text/javascript">
 					for(var i=1; i<data.feed.entry.length; i=i+1){
-						$("#proposalList").append("<li><a href='proposalInfo.html' id='id"+i+"' rel='external'>"+data.feed.entry[i].gsx$title.$t+"("+data.feed.entry[i].gsx$proposer.$t+"提案)</a></li>");
+						$("#proposalList").append("<li><a href='proposalInfo.html' id='id"+i+"' rel='external' style='white-space: normal;'>"+data.feed.entry[i].gsx$title.$t+"("+data.feed.entry[i].gsx$proposer.$t+"提案)</a></li>");
 						$("#id"+i).click(function(){
 							idNum = parseInt($(this).attr("id").slice(2));
 							window.localStorage["proposalId"]=data.feed.entry[idNum].gsx$id.$t;

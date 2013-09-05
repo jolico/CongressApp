@@ -8,6 +8,8 @@
 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 <script	src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
 <script src="cordova.js"></script>
+<link rel="stylesheet" href="jqm-inlinetabs.min.css" />
+<script src="jqm-inlinetabs.min.js"></script>
 <script type="text/javascript">
 	var data;
 	var idNum;
@@ -31,7 +33,7 @@
 <body>
 	<div data-role="page" id="proposalInfoPage">
 		<div id="header" data-role="header">
-			<a href="proposals.html" data-icon="arrow-l" rel="external">Back</a>
+			<a href="proposals.html" data-icon="arrow-l" rel="external" data-rel="back">Back</a>
 			<h4></h4>
 			<a href="index.html" data-icon="home">Home</a>
 		</div>
@@ -39,27 +41,42 @@
 			<div class="ui-gird-a" style="height: 100%; width: 100%;">
 				<div class="ui-block-a" id="vertical" style="height: 100%; width: 100%;">
 				<!-- Home -->
-
-					<div data-role="collapsible-set">
-						<div data-role="collapsible" data-collapsed="false">
-							<h3>提案名稱</h3>
-							<p id="title"></p>
-						</div>
-						<div data-role="collapsible" data-collapsed="true">
-							<h3>提案委員/單位</h3>
-							<p id="proposer" style="margin:10px 5px 5px">主提案人: </p>
-							<p id="consigner" style="margin:5px 5px 10px">連署提案人: </p>
-						</div>
-						<div data-role="collapsible" data-collapsed="ture">
-							<h3>提案內容</h3>
-							<p id="content"></p>
-						</div>
-						<div data-role="collapsible" data-collapsed="true">
-							<h3>審議進度</h3>
-							<table id="progress">
-							</table>
-						</div>
+					<ul data-role="listview" data-inset="true" style="margin: 0">
+						<li>
+							<h3 style='white-space: normal;'>提案名稱 :<br><span id="title"></span></h3>
+						</li>
+					</ul>
+					<div data-role="inlinetabs"  data-content-theme="c" data-scroll="true" data-mini="true">
+					    <ul>
+					        <li data-tab="1">提案委員/單位</li>
+					        <li data-tab="2">提案內容</li>
+					        <li data-tab="3">審議進度</li>
+					        <li data-tab="4">追蹤提案</li>
+					    </ul>
+					
+					    <div data-tab="1" class="ui-content" style="padding: 0px 10px;">
+					        <p id="proposer" style="margin:5px">主提案人: </p>
+							<p id="consigner" style="margin:5px">連署提案人: </p>
+					    </div>
+					    <div data-tab="2" class="ui-content">
+					        <span id="content"></span>
+					    </div>
+					    <div data-tab="3" class="ui-content">
+					        <table id="progress"></table>
+					    </div>
+					    <div data-tab="4" class="ui-content">
+					        <ul data-role="listview" id="infoList" data-inset="true" style="margin: 0">
+					        	<li class='meeting'>
+					        		<a>
+					        			<h4 style='white-space: normal;'>[會議]</h4>
+					        			<p style='white-space: normal;'>摘要:</p>
+					        			<p class='ui-li-aside' style='width:auto;'>時間</p>
+					        		</a>
+					        	</li>
+					        </ul>
+					    </div>
 					</div>
+
 				</div>
 				<div class="ui-block-b" id="horizontal"></div>
 			</div>
@@ -84,26 +101,31 @@
 			$("#title").append(data.feed.entry[idNum].gsx$title.$t);
 			var proposer = data.feed.entry[idNum].gsx$proposer.$t.split(",");
 			for(var i=0;i<proposer.length;i++){
-				$("#proposer").append("<a href='profile.html' rel='external' id='"+proposer[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+proposer[i]+"</a>");
-				//if(i != proposer.length-1){$("#proposer").append(", ");}
-				$("#"+proposer[i]).click(function(){
-					window.localStorage["name"]=$(this).attr("id");
-				});
+				if(proposer[i] == "行政院"){
+					$("#proposer").append("<a href='#' id='"+proposer[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+proposer[i]+"</a>");
+				} else {
+					$("#proposer").append("<a href='profile.html' rel='external' id='"+proposer[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+proposer[i]+"</a>");
+					$("#"+proposer[i]).click(function(){
+						window.localStorage["name"]=$(this).attr("id");
+					});
+				}
 			}
 			var consigner = data.feed.entry[idNum].gsx$consigner.$t.split(",");
 			for(var i=0;i<consigner.length;i++){
-				$("#consigner").append("<a href='profile.html' rel='external' id='"+consigner[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+consigner[i]+"</a>");
-				//if(i != consigner.length-1){$("#consigner").append(", ");}
-				$("#"+consigner[i]).click(function(){
-					window.localStorage["name"]=$(this).attr("id");
-					alert(this.attr("id")+", "+window.localStorage["name"]);
-				});
+				if(consigner[i] == "無"){
+					$("#consigner").append("<a href='#' id='"+consigner[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+consigner[i]+"</a>");
+				} else {
+					$("#consigner").append("<a href='profile.html' rel='external' id='"+consigner[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+consigner[i]+"</a>");
+					$("#"+consigner[i]).click(function(){
+						window.localStorage["name"]=$(this).attr("id");
+					});
+				}
 			}
 			$("#content").append("<a onclick=\"load('"+data.feed.entry[idNum].gsx$content.$t+"')\" class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>提案影像</a>");
 			var process = (data.feed.entry[idNum].gsx$proposedate.$t+" 提案,"+data.feed.entry[idNum].gsx$history.$t).split(",");
-			var colNum = Math.floor(($(window).width()-60-77)/100)+1;
-			var rowNum = Math.ceil(process.length/colNum);
-			var eachRow = Math.ceil(process.length/rowNum);
+			var colNum = Math.floor(($(window).width()-60-77)/100)+1;//險是全部所需的col
+			var rowNum = Math.ceil(process.length/colNum);//顯示全部所需的row
+			var eachRow = Math.ceil(process.length/rowNum);//每一行實際有填資料的數目
 			//alert("col:"+colNum+", row:"+rowNum+", each:"+eachRow+", length:"+process.length);
 			var dateRow;
  			var valueRow;
