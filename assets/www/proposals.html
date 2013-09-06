@@ -9,14 +9,14 @@
 		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.3.1/jquery.mobile-1.3.1.min.js"></script>
 		<script type="text/javascript">
-			var data;
-			var idNum;
-			function parse(json){
+			var prpData = JSON.parse(window.localStorage["prpData"]);
+			var prpId;
+/* 			function parse(json){
 				data = json;	
-			}
+			} */
 		</script>
-		<script type='text/javascript' 
-		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdGRoLVBXdFRLN0RuR2lmMFlMY1JkOEE/od6/public/values?alt=json-in-script&callback=parse'></script>
+		<!-- <script type='text/javascript' 
+		src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdGRoLVBXdFRLN0RuR2lmMFlMY1JkOEE/od6/public/values?alt=json-in-script&callback=parse'></script> -->
 	 <script src="jquery.nicescroll.js"></script>
 	 </head> 
 	 <body>
@@ -34,11 +34,11 @@
 			</div>
 		</div>
 				<script type="text/javascript">
-					for(var i=1; i<data.feed.entry.length; i=i+1){
-						$("#proposalList").append("<li><a href='proposalInfo.html' id='id"+i+"' rel='external' style='white-space: normal;'>"+data.feed.entry[i].gsx$title.$t+"("+data.feed.entry[i].gsx$proposer.$t+"提案)</a></li>");
+					for(var i=1; i<prpData.feed.entry.length; i=i+1){
+						$("#proposalList").append("<li><a href='proposalInfo.html' id='id"+i+"' rel='external' style='white-space: normal;'>"+prpData.feed.entry[i].gsx$title.$t+"("+prpData.feed.entry[i].gsx$proposer.$t+"提案)</a></li>");
 						$("#id"+i).click(function(){
-							idNum = parseInt($(this).attr("id").slice(2));
-							window.localStorage["proposalId"]=data.feed.entry[idNum].gsx$id.$t;
+							prpId = parseInt($(this).attr("id").slice(2));
+							window.localStorage["proposalId"]=prpData.feed.entry[prpId].gsx$id.$t;
 						});
 					}
 				</script>

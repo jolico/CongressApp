@@ -11,23 +11,23 @@
 <link rel="stylesheet" href="jqm-inlinetabs.min.css" />
 <script src="jqm-inlinetabs.min.js"></script>
 <script type="text/javascript">
-	var data;
-	var idNum;
+	var prpData = JSON.parse(window.localStorage["prpData"]);
+	var prpId;
 	function findProposal(id){
-		for(var i=0; i<data.feed.entry.length;i++){
-			if(data.feed.entry[i].gsx$id.$t == id){
+		for(var i=0; i<prpData.feed.entry.length;i++){
+			if(prpData.feed.entry[i].gsx$id.$t == id){
 				return i;
 			}
 		}
 		alert("Error: 無法找到此提案!");
 		return 1;
 	}
-	function parse(json) {
-		data = json;
-	}
+/* 	function parse(json) {
+		prpData = json;
+	} */
 </script>
-<script type='text/javascript'
-	src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdGRoLVBXdFRLN0RuR2lmMFlMY1JkOEE/od6/public/values?alt=json-in-script&callback=parse'></script>
+<!-- <script type='text/javascript'
+	src='https://spreadsheets.google.com/feeds/list/0AqaqaVDQTj4HdGRoLVBXdFRLN0RuR2lmMFlMY1JkOEE/od6/public/values?alt=json-in-script&callback=parse'></script> -->
 <script src="jquery.nicescroll.js"></script>
 </head>
 <body>
@@ -97,9 +97,9 @@
 		function addTag(proposalId, tag){
 			
 		} */
-			idNum = findProposal(window.localStorage["proposalId"]);
-			$("#title").append(data.feed.entry[idNum].gsx$title.$t);
-			var proposer = data.feed.entry[idNum].gsx$proposer.$t.split(",");
+			prpId = findProposal(window.localStorage["proposalId"]);
+			$("#title").append(prpData.feed.entry[prpId].gsx$title.$t);
+			var proposer = prpData.feed.entry[prpId].gsx$proposer.$t.split(",");
 			for(var i=0;i<proposer.length;i++){
 				if(proposer[i] == "行政院"){
 					$("#proposer").append("<a href='#' id='"+proposer[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+proposer[i]+"</a>");
@@ -110,7 +110,7 @@
 					});
 				}
 			}
-			var consigner = data.feed.entry[idNum].gsx$consigner.$t.split(",");
+			var consigner = prpData.feed.entry[prpId].gsx$consigner.$t.split(",");
 			for(var i=0;i<consigner.length;i++){
 				if(consigner[i] == "無"){
 					$("#consigner").append("<a href='#' id='"+consigner[i]+"' class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>"+consigner[i]+"</a>");
@@ -121,8 +121,8 @@
 					});
 				}
 			}
-			$("#content").append("<a onclick=\"load('"+data.feed.entry[idNum].gsx$content.$t+"')\" class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>提案影像</a>");
-			var process = (data.feed.entry[idNum].gsx$proposedate.$t+" 提案,"+data.feed.entry[idNum].gsx$history.$t).split(",");
+			$("#content").append("<a onclick=\"load('"+prpData.feed.entry[prpId].gsx$content.$t+"')\" class='ui-btn ui-shadow ui-btn-inline ui-btn-up-c' style='padding:0.2em 0.4em'>提案影像</a>");
+			var process = (prpData.feed.entry[prpId].gsx$proposedate.$t+" 提案,"+prpData.feed.entry[prpId].gsx$history.$t).split(",");
 			var colNum = Math.floor(($(window).width()-60-77)/100)+1;//險是全部所需的col
 			var rowNum = Math.ceil(process.length/colNum);//顯示全部所需的row
 			var eachRow = Math.ceil(process.length/rowNum);//每一行實際有填資料的數目
